@@ -35,15 +35,20 @@ vim.opt.rtp:prepend(lazypath)
 
 -- プラグインの登録と個別設定
 require("lazy").setup({
+  -- 配色は起動直後から要るので、ほかより先に読み込む
   {
     "Mofiqul/vscode.nvim",
+    lazy = false,
+    priority = 1000,
     config = function()
       vim.cmd("colorscheme vscode")
     end
   },
 
-  { "nvim-tree/nvim-web-devicons" },
+  -- アイコンは neo-tree / telescope が読み込まれるときに一緒に読み込む
+  { "nvim-tree/nvim-web-devicons", lazy = true },
 
+  -- ファイルツリー：<leader>e か :Neotree を使うまで読み込まない
   {
     "nvim-neo-tree/neo-tree.nvim",
     branch = "v3.x",
@@ -52,22 +57,32 @@ require("lazy").setup({
       "nvim-tree/nvim-web-devicons",
       "MunifTanjim/nui.nvim",
     },
+    cmd = "Neotree",
+    keys = {
+      { "<leader>e", "<cmd>Neotree toggle<CR>", silent = true, desc = "ファイルツリーを開閉" },
+    },
+    init = function()
+      -- `nvim .` のようにフォルダを開いたときは、netrw の代わりに neo-tree を出す（遅延前と同じ動き）
+      if vim.fn.argc() == 1 and vim.fn.isdirectory(vim.fn.argv(0)) == 1 then
+        require("lazy").load({ plugins = { "neo-tree.nvim" } })
+      end
+    end,
     config = function()
       require("neo-tree").setup({
         window = { width = 30 }
       })
-      vim.keymap.set('n', '<leader>e', '<cmd>Neotree toggle<CR>', { silent = true })
     end
   },
 
+  -- ファイル検索：<leader>f か :Telescope を使うまで読み込まない
   {
     "nvim-telescope/telescope.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
-    config = function()
+    cmd = "Telescope",
+    keys = {
       -- ショートカット： スペース + f でファイル検索のポップアップを開く
-      local builtin = require('telescope.builtin')
-      vim.keymap.set('n', '<leader>f', builtin.find_files, {})
-    end
+      { "<leader>f", function() require("telescope.builtin").find_files() end, desc = "ファイル検索" },
+    },
   }
 })
 
