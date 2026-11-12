@@ -6,7 +6,7 @@ kosora の Windows 開発環境。PowerShell 7 + Windows Terminal + Neovim + Gla
 
 | フォルダ | 内容 | 置き先 |
 | --- | --- | --- |
-| `powershell/` | pwsh 7 プロファイル（eza/bat ラッパー、zoxide 遅延ロード、yazi 連携、starship/mise キャッシュ） | `Documents\PowerShell\` |
+| `powershell/` | pwsh 7 プロファイル（eza/bat ラッパー、zoxide 遅延ロード、yazi 連携、starship キャッシュ） | `Documents\PowerShell\` |
 | `config/starship.toml` | プロンプト | `~\.config\` |
 | `config/mise/` | Node などのバージョン管理（mise） | `~\.config\mise\` |
 | `nvim/` | Neovim（lazy.nvim / telescope / neo-tree、Ctrl+T ターミナル、F5 実行） | `%LOCALAPPDATA%\nvim` |
@@ -55,5 +55,6 @@ pwsh -File .\link.ps1
 
 ## メモ
 
-- starship / mise を更新したら `Update-ShellCache` を1回実行（初期化スクリプトをキャッシュして起動を速くしている）
+- starship を更新したら `Update-ShellCache` を1回実行（初期化スクリプトをキャッシュして起動を速くしている）
+- mise は shims だけで使う（profile で activate しない）。`%LOCALAPPDATA%\mise\shims` が PATH に入っていれば、フォルダごとの mise.toml / .node-version に従って切り替わる
 - Windows Terminal と CorvusSKK は保存時にファイルを置き換えるので、リンクではなくコピー。設定を変えたらリポジトリ側にもコピーし直す

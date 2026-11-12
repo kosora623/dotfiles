@@ -69,28 +69,25 @@ function cdi {
 }
 
 # ====================================================
-# 7. キャッシュ（starship / mise の初期化スクリプトを毎回生成しない）
-#    ツールを更新したら Update-ShellCache を1回実行する
+# 7. キャッシュ（starship の初期化スクリプトを毎回生成しない）
+#    starship を更新したら Update-ShellCache を1回実行する
 # ====================================================
 $ShellCacheDir = Join-Path $HOME ".cache\pwsh"
 
 function Update-ShellCache {
     New-Item -ItemType Directory -Force $ShellCacheDir | Out-Null
     & starship init powershell --print-full-init | Out-File -Encoding utf8 (Join-Path $ShellCacheDir "starship.ps1")
-    if (Get-Command mise -ErrorAction SilentlyContinue) {
-        & mise activate pwsh | Out-File -Encoding utf8 (Join-Path $ShellCacheDir "mise.ps1")
-    }
     Write-Host "shell cache updated: $ShellCacheDir"
 }
 
 if (-not (Test-Path (Join-Path $ShellCacheDir "starship.ps1"))) { Update-ShellCache }
 
 # ====================================================
-# 8. mise（Node などのバージョン管理。cd で自動切り替え）
+# 8. mise は shims だけで使う（activate しない）
+#    %LOCALAPPDATA%\mise\shims が PATH に入っていれば（install.ps1 が設定する）
+#    node などはフォルダごとの mise.toml / .node-version に従って切り替わる。
+#    activate は起動のたびに mise hook-env を実行して約 120ms かかるので使わない
 # ====================================================
-$MiseCache = Join-Path $ShellCacheDir "mise.ps1"
-if (-not (Test-Path $MiseCache) -and (Get-Command mise -ErrorAction SilentlyContinue)) { Update-ShellCache }
-if (Test-Path $MiseCache) { . $MiseCache }
 
 # ====================================================
 # 9. Starship プロンプト
