@@ -18,6 +18,7 @@ kosora の Windows 開発環境。PowerShell 7 + Windows Terminal + Neovim + Gla
 | `corvusskk/` | SKK 日本語入力（コピーで配置） | `%APPDATA%\CorvusSKK\` |
 | `home/` | .gitconfig / .latexmkrc / .bashrc など | `~\` |
 | `packages/` | winget / scoop / VS Code 拡張の一覧 | — |
+| `docs/` | 調査メモ・資料（Windows のチューニング記録など） | — |
 
 ## 新しい PC で
 
@@ -39,7 +40,7 @@ pwsh -File .\link.ps1
 ```
 
 - シンボリックリンクには「開発者モード」（設定 > システム > 開発者向け）が必要。オフなら gsudo で昇格して実行する
-- 既にあるファイルは `<名前>.bak-<日時>` にリネームしてから置き換える
+- 既にあるファイルは `~\dotfiles-backup\<日時>\` の下（`~` からの相対パスのまま）に移してから置き換える。元の場所の隣に `.bak` を残すと、スタートアップフォルダでは起動時に「アプリを選択」が出てしまうため
 
 ## git の名前とメール
 

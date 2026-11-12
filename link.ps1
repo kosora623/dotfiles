@@ -2,12 +2,21 @@
 #   pwsh -File .\link.ps1
 # Symlinks need Windows "Developer Mode" (Settings > System > For developers),
 # otherwise this script re-runs itself through gsudo.
-# An existing real file/folder at the target is renamed to <name>.bak-<date> first.
+# An existing real file/folder at the target is moved to ~\dotfiles-backup\<date>\ first
+# (not next to the original: a .bak left in the Startup folder makes Windows ask which app to open it with).
 
 $ErrorActionPreference = 'Stop'
 $repo  = $PSScriptRoot
 $docs  = [Environment]::GetFolderPath('MyDocuments')
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$backupRoot = Join-Path $HOME "dotfiles-backup\$stamp"
+
+# keep the path under ~ (or the drive path) so two files with the same name don't collide
+function BackupPath([string]$path) {
+  if ($path.StartsWith("$HOME\", [StringComparison]::OrdinalIgnoreCase)) { $rel = $path.Substring($HOME.Length + 1) }
+  else { $rel = $path -replace ':', '' }
+  Join-Path $backupRoot $rel
+}
 
 # mode: link = symbolic link, copy = plain copy (apps that replace the file when they save)
 $map = @(
@@ -61,7 +70,12 @@ foreach ($m in $map) {
   if ($item) {
     if ($item.LinkType -and $item.Target -eq $src) { Write-Host "ok    $dst"; continue }
     if ($item.LinkType) { Remove-Item $dst -Force }
-    else { Rename-Item $dst "$dst.bak-$stamp"; Write-Host "  backup -> $dst.bak-$stamp" -ForegroundColor DarkGray }
+    else {
+      $bak = BackupPath $dst
+      New-Item -ItemType Directory -Force (Split-Path $bak) | Out-Null
+      Move-Item $dst $bak
+      Write-Host "  backup -> $bak" -ForegroundColor DarkGray
+    }
   }
 
   if ($m.mode -eq 'link') {
