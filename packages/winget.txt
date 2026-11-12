@@ -1,0 +1,100 @@
+# winget packages  (one ID per line, # = comment)
+# install.ps1 installs these. Dependencies (VCRedist etc.) come automatically.
+
+# --- Shell / Terminal
+Microsoft.PowerShell
+Microsoft.WindowsTerminal
+Starship.Starship
+gerardog.gsudo
+jdx.mise
+DEVCOM.JetBrainsMonoNerdFont
+
+# --- CLI
+sharkdp.bat
+eza-community.eza
+junegunn.fzf
+BurntSushi.ripgrep.MSVC
+sxyazi.yazi
+JesseDuffield.lazygit
+dandavison.delta
+Clement.bottom
+Fastfetch-cli.Fastfetch
+Gyan.FFmpeg
+oschwartz10612.Poppler
+JohnMacFarlane.Pandoc
+
+# --- Window manager / Input
+glzr-io.glazewm
+AutoHotkey.AutoHotkey
+nathancorvussolis.corvusskk
+Google.JapaneseIME
+
+# --- Editors
+Neovim.Neovim
+Microsoft.VisualStudioCode
+Anysphere.Cursor
+Amazon.Kiro
+Microsoft.VisualStudio.2022.Community
+
+# --- Languages / SDK
+Git.Git
+Rustlang.Rustup
+GoLang.Go
+Oracle.JDK.26
+Python.Python.3.13
+Python.Python.3.11
+Python.Launcher
+Kitware.CMake
+Microsoft.WindowsSDK.10.0.26100
+Google.CloudSDK
+
+# --- Containers / VM / Network
+Microsoft.WSL
+Docker.DockerDesktop
+Oracle.VirtualBox
+Tailscale.Tailscale
+WiresharkFoundation.Wireshark
+Ollama.Ollama
+
+# --- DB
+Oracle.MySQL
+Oracle.MySQLWorkbench
+
+# --- Apps (creative / office / misc)
+ArduinoSA.IDE.stable
+Audacity.Audacity
+Maxon.Cinema4D.2026
+Muse.MuseHub
+Microsoft.Office
+AlphaTheta.rekordbox
+Unity.Unity.6000
+Unity.UnityHub
+AntibodySoftware.WizTree
+UniversalAudio.UAConnect
+Okta.OktaVerify
+Apple.Bonjour
+BlenderFoundation.Blender
+Adobe.Acrobat.Pro
+logisim-evolution.logisim-evolution
+Adobe.CreativeCloud
+Wagnardsoft.DisplayDriverUninstaller
+Google.Chrome.EXE
+Microsoft.Edge
+OBSProject.OBSStudio
+iZotope.ProductPortal
+ppy.osu
+SpitfireAudioHoldingsLtd.SpitfireAudio
+Baidu.BaiduNetdisk
+Mattermost.MattermostDesktop
+Notion.Notion
+Neosku.AviUtl2-Catalog
+Figma.Figma
+Figma.FigmaAgent
+Rufus.Rufus
+Zoom.Zoom.EXE
+Obsidian.Obsidian
+guideguide.ZXPInstaller
+Microsoft.Teams
+Microsoft.365Copilot
+Microsoft.Outlook
+SlackTechnologies.Slack

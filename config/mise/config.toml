@@ -1,0 +1,16 @@
+# ~/.config/mise/config.toml  (global tools)
+# プロジェクトごとのバージョンは各リポジトリの mise.toml / .node-version / .nvmrc に書く
+
+[tools]
+node = "lts"
+
+# 整理表で「保留」にしているもの。移すときはコメントを外して mise install し、
+# winget 側（Python.Python.3.13 など）をアンインストールする
+# python = "3.13"
+# go = "latest"
+# java = "26"
+# bun = "latest"
+
+[settings]
+# .node-version / .nvmrc / .python-version も読む
+idiomatic_version_file_enable_tools = ["node", "python"]

@@ -1,0 +1,58 @@
+{
+    "security.allowedUNCHosts": [
+        "wsl.localhost"
+    ],
+    "liveServer.settings.donotShowInfoMsg": true,
+    "git.suggestSmartCommit": false,
+    "git.openRepositoryInParentFolders": "never",
+    "python.createEnvironment.trigger": "off",
+    "dart.flutterSdkPath": "C:\\src\\flutter",
+    "liveServer.settings.donotVerifyTags": true,
+    "techtrain-railway.optOutTelemetry": true,
+    "typescript.updateImportsOnFileMove.enabled": "never",
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "git.autofetch": true,
+    "cSpell.userWords": [
+        "aviutl"
+    ],
+    "git.confirmSync": false,
+    "chat.viewSessions.orientation": "stacked",
+    "terminal.integrated.initialHint": false,
+    "code-runner.runInTerminal": true,
+    "markdown-mermaid.darkModeTheme": "default",
+    "workbench.settings.applyToAllProfiles": [
+
+
+        
+    ],
+    "explorer.compactFolders": false,
+    "diffEditor.experimental.useTrueInlineView": true,
+    "workbench.editor.empty.hint": "hidden",
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        },
+        "Command Prompt": {
+            "path": [
+                "${env:windir}\\Sysnative\\cmd.exe",
+                "${env:windir}\\System32\\cmd.exe"
+            ],
+            "args": [],
+            "icon": "terminal-cmd"
+        },
+        "Git Bash": {
+            "source": "Git Bash",
+            "icon": "terminal-git-bash"
+        },
+        "Windows PowerShell": {
+            "path": "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.env.windows": {},
+    "redhat.telemetry.enabled": true,
+    "claudeCode.preferredLocation": "panel",
+    "claudeCode.hideOnboarding": true,
+    
+}

@@ -1,0 +1,29 @@
+# theme.toml
+
+[manager]
+# 左右の枠線を控えめなグレーにして、境界を分かりやすくする
+border_symbol = "│"
+border_style  = { fg = "#44475a" }
+
+# 最重要：カーソル（現在選択中のファイル）の背景色と文字色をはっきり分ける
+# 背景を鮮やかな水色（#8be9fd）にし、文字をクッキリ黒（#000000）にします
+cursor_style = { bg = "#8be9fd", fg = "#000000", bold = true }
+
+[status]
+# 画面下のステータスバーを区切り、今どのモード（Normal/Select等）にいるか見やすく
+separator_open  = ""
+separator_close = ""
+main_style      = { bg = "#282a36", fg = "#f8f8f2" }
+
+[filetype]
+# ファイルの種類ごとに色を変えて視認性を上げる設定
+rules = [
+    # フォルダは鮮やかな青（または紫）
+    { mime = "inode/directory", style = { fg = "#bd93f9", bold = true } },
+    # テキストやコードは白
+    { mime = "text/*", style = { fg = "#f8f8f2" } },
+    # 画像ファイルは目立つオレンジ
+    { mime = "image/*", style = { fg = "#ffb86c" } },
+    # 実行ファイルやスクリプトは緑
+    { mime = "application/x-executable", style = { fg = "#50fa7b" } },
+]

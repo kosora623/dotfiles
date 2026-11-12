@@ -1,0 +1,12 @@
+[core]
+	editor = code --wait
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	side-by-side = true
+	navigate = true
+
+# 名前とメールはリポジトリに入れず ~/.gitconfig.local に置く（install.ps1 が入力で作る / link.ps1 が今の設定から移す）
+[include]
+	path = ~/.gitconfig.local

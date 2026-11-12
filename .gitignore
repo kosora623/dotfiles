@@ -1,0 +1,6 @@
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+
+# link.ps1 のバックアップ
+*.bak-*

@@ -1,0 +1,39 @@
+# yazi.toml
+[manager]
+# 比率の変更（左：親フォルダ、中：現在、右：プレビュー）
+# プレビュー画面を広くして、コードや画像をガッツリ見やすくします
+ratio          = [ 1, 3, 4 ]
+show_hidden    = true  # 隠しファイル（.configなど）を最初から表示する
+sort_by        = "name"
+sort_sensitive = false
+sort_reverse   = false
+sort_dir_first = true
+
+[opener]
+vscode = [
+    { run = 'code "%*"', block = false, desc = "VS Code" }
+]
+nvim = [
+    { run = 'nvim "%*"', block = true, desc = "Neovim" }
+]
+
+[open]
+rules = [
+    # 1. 最優先：url を使い、波カッコ {} で複数の拡張子を一括指定します。
+    # 最新版のYaziでは、この url = "*.{...}" という書き方が正しい複数指定になります。
+    { url = "*.{txt,md,json,toml,rs,ts,js,html,css}", use = [ "vscode", "nvim" ] },
+
+    # 2. フォルダをEnterや l で開く（Yaziの標準の挙動）
+    { mime = "inode/directory", use = "open" },
+
+    # 3. 画像ファイルはWindows標準で開く
+    { mime = "image/*", use = "open" },
+
+    # 4. 最後に、どれにも当てはまらないファイルをWindows標準（Explorer関連付け）に丸投げ
+    # ここも mime = "*" ではなく、url = "*" に統一することで競合を防ぎます。
+    { url = "*", use = "open" }
+]
+
+[preview]
+image_preview_method = "kitty"
+

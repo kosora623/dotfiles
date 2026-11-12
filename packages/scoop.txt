@@ -1,0 +1,13 @@
+# scoop buckets
+bucket main
+bucket extras
+
+# scoop apps
+7zip
+gh
+glow
+mods
+opencode
+tealdeer
+trippy
+zoxide
