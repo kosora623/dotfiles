@@ -104,7 +104,42 @@ if (-not (Test-Path (Join-Path $ShellCacheDir "starship.ps1"))) { Update-ShellCa
 
 # ====================================================
 # 9. Starship プロンプト
+#    git の表示はブランチ名だけ。starship の git モジュールはこの PC だと
+#    1回 90ms 以上かかるので使わず、.git/HEAD を直接読んで $env:STARSHIP_GIT_BRANCH に入れる
+#    （starship.toml の env_var.GIT_BRANCH が表示する。1ms 未満）
 # ====================================================
+function Get-GitBranchFast {
+    $p = $ExecutionContext.SessionState.Path.CurrentLocation
+    if ($p.Provider.Name -ne 'FileSystem') { return }
+    $d = $p.ProviderPath
+    while ($d) {
+        $g = Join-Path $d '.git'
+        if ([IO.Directory]::Exists($g)) { break }
+        if ([IO.File]::Exists($g)) {
+            # worktree / submodule: .git は「gitdir: <パス>」と書かれたファイル
+            $line = [IO.File]::ReadAllText($g).Trim()
+            if ($line -notmatch '^gitdir:\s*(.+)$') { return }
+            $g = $Matches[1]
+            if (-not [IO.Path]::IsPathRooted($g)) { $g = Join-Path $d $g }
+            break
+        }
+        $d = [IO.Path]::GetDirectoryName($d)
+    }
+    if (-not $d) { return }
+    $headPath = Join-Path $g 'HEAD'
+    if (-not [IO.File]::Exists($headPath)) { return }
+    $head = [IO.File]::ReadAllText($headPath).Trim()
+    if ($head -match '^ref: refs/heads/(.+)$') { return $Matches[1] }
+    if ($head -match '^[0-9a-f]{7}') { return $Matches[0] }   # detached HEAD は短いハッシュ
+}
+
+function Invoke-Starship-PreCommand {
+    $b = $null
+    try { $b = Get-GitBranchFast } catch {}
+    # 空文字を代入すると変数が残って「on 」だけ出るので、無いときは $null で消す
+    if ($b) { $env:STARSHIP_GIT_BRANCH = $b } else { $env:STARSHIP_GIT_BRANCH = $null }
+}
+
 . (Join-Path $ShellCacheDir "starship.ps1")
 
 # ====================================================

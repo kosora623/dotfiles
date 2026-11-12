@@ -57,4 +57,5 @@ pwsh -File .\link.ps1
 
 - starship を更新したら `Update-ShellCache` を1回実行（初期化スクリプトをキャッシュして起動を速くしている）
 - mise は shims だけで使う（profile で activate しない）。`%LOCALAPPDATA%\mise\shims` が PATH に入っていれば、フォルダごとの mise.toml / .node-version に従って切り替わる
+- プロンプトの git 表示はブランチ名のみ（速度優先）。状態は git status / lazygit で見る
 - Windows Terminal と CorvusSKK は保存時にファイルを置き換えるので、リンクではなくコピー。設定を変えたらリポジトリ側にもコピーし直す

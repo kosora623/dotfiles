@@ -4,8 +4,7 @@ add_newline = true
 
 format = """
 $directory\
-$git_branch\
-$git_status\
+${env_var.GIT_BRANCH}\
 $character"""
 
 [character]
@@ -15,11 +14,13 @@ error_symbol = "[❯](bold red)"
 [directory]
 style = "bold blue"
 truncation_length = 3
-truncate_to_repo = true
+# true だと starship がリポジトリを開いて 90ms 以上かかるので false
+truncate_to_repo = false
 
-[git_branch]
-symbol = " "
+# git はブランチ名だけ表示する（速度優先。状態は git status / lazygit で見る）。
+# starship の git_branch / git_status は使わず、PowerShell プロファイルの
+# Invoke-Starship-PreCommand が .git/HEAD を読んで STARSHIP_GIT_BRANCH に入れる
+[env_var.GIT_BRANCH]
+variable = "STARSHIP_GIT_BRANCH"
 style = "bold purple"
-
-[git_status]
-style = "bold yellow"
+format = "on [ $env_value]($style) "
