@@ -76,7 +76,20 @@ $ShellCacheDir = Join-Path $HOME ".cache\pwsh"
 
 function Update-ShellCache {
     New-Item -ItemType Directory -Force $ShellCacheDir | Out-Null
-    & starship init powershell --print-full-init | Out-File -Encoding utf8 (Join-Path $ShellCacheDir "starship.ps1")
+    $init = (& starship init powershell --print-full-init) -join "`n"
+
+    # 継続行プロンプト（>> の代わり）は起動のたびに starship.exe を呼んで作られる（約 100ms）。
+    # ここで1回だけ作って文字列として埋め込む。starship.toml の continuation_prompt を変えたら再実行する
+    $env:STARSHIP_SHELL = "powershell"
+    $cont = (& starship prompt --continuation) -join "`n"
+    $pattern = "Invoke-Native -Executable '[^']+' -Arguments @\(\s*""prompt"",\s*""--continuation""\s*\)"
+    if ($init -match $pattern) {
+        $init = $init -replace $pattern, ("'" + $cont.Replace("'", "''") + "'")
+    } else {
+        Write-Warning "starship の初期化スクリプトの形が変わったため、継続行プロンプトは埋め込まなかった（動作は今までどおり）"
+    }
+
+    $init | Out-File -Encoding utf8 (Join-Path $ShellCacheDir "starship.ps1")
     Write-Host "shell cache updated: $ShellCacheDir"
 }
 
