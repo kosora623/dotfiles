@@ -111,6 +111,12 @@ Windows 10 風にした設定。2026-11-13 に読み取りだけで確認した�
 - スタートアップのアプリはほとんど StartupApproved でオフになっている。オンで残っているのは Microsoft.Lists、Logitech Download Assistant、
   Google Japanese Input Prelauncher。Google 日本語入力は CorvusSKK と併用していて必要なので残す
 
+## 再現と巻き戻し
+
+この棚卸しの内容（戻したものを除く）と追加の設定は `windows/tweaks/apply.ps1` で再現でき、`revert.ps1` で戻せる。
+追加の設定は LongPathsEnabled・開発者モード・KeyboardDelay=0・固定キー / 切り替えキー / フィルターキーのショートカット停止・
+MenuShowDelay=100・タスクバーの「タスクの終了」。
+
 ## 再調査のしかた
 
 ```powershell
