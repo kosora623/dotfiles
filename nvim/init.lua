@@ -1,3 +1,6 @@
+-- Lua モジュールのバイトコードキャッシュ（起動を速くする）
+vim.loader.enable()
+
 -- 基本設定
 vim.opt.number = true
 vim.opt.cursorline = true
