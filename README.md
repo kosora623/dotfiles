@@ -27,7 +27,10 @@ git clone https://github.com/kosora623/dotfiles $HOME\dotfiles
 cd $HOME\dotfiles
 pwsh -ExecutionPolicy Bypass -File .\install.ps1          # アプリも全部
 pwsh -ExecutionPolicy Bypass -File .\install.ps1 -SkipApps # CLI と設定だけ
+# -SkipVSCode を付けると VS Code 拡張のインストールを飛ばす
 ```
+
+install.ps1 は winget → scoop → mise の PATH 設定 → git の名前とメール → link.ps1 → `mise install` → VS Code 拡張 の順に実行する。
 
 ## 今の PC で設定だけリンク
 
@@ -37,7 +40,17 @@ pwsh -File .\link.ps1
 
 - シンボリックリンクには「開発者モード」（設定 > システム > 開発者向け）が必要。オフなら gsudo で昇格して実行する
 - 既にあるファイルは `<名前>.bak-<日時>` にリネームしてから置き換える
-- git の名前とメールはリポジトリに入れず `~\.gitconfig.local` に置く
+## git の名前とメール
+
+リポジトリには入れず `~\.gitconfig.local` に置き、`home/.gitconfig` から `[include]` で読む。
+
+- install.ps1 は `~\.gitconfig.local` がなければ名前とメールを聞いて作る
+- link.ps1 だけを実行した場合は、今の `~\.gitconfig` の名前とメールを `~\.gitconfig.local` に移す
+- 公開リポジトリなので、メールは GitHub の noreply アドレス（Settings > Emails にある `<ID>+<ユーザー名>@users.noreply.github.com`）にする
+
+## 改行コード
+
+`.gitattributes` でリポジトリ内は LF にそろえている（`*.bat` / `*.cmd` だけ CRLF）。`core.autocrlf` の設定に関係なく、チェックアウトしたファイルも LF になる。
 
 ## メモ
 
