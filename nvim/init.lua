@@ -118,11 +118,11 @@ vim.keymap.set('n', '<F5>', function()
     vim.cmd([[!cmd.exe /c start cmd /k python -X utf8 "%"]])
 
   elseif file_ext == 'c' then
-    -- 🌟 実行後に一時停止する処理を追加
+    -- 実行後に一時停止する処理を追加
     vim.cmd('!gcc "%" -o app ; if ($?) { .\\app } ; Write-Host "`nPress Enter to continue..." ; Read-Host')
 
   elseif file_ext == 'cpp' then
-    -- 🌟 C++ も同様に、実行後に一時停止する処理を追加
+    -- C++ も同様に、実行後に一時停止する処理を追加
     vim.cmd('!g++ "%" -o app ; if ($?) { .\\app } ; Write-Host "`nPress Enter to continue..." ; Read-Host')
 
   elseif file_ext == 'js' then
