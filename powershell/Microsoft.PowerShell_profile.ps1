@@ -20,6 +20,9 @@ Remove-Item Alias:ls  -ErrorAction SilentlyContinue
 Remove-Item Alias:dir -ErrorAction SilentlyContinue
 Remove-Item Alias:cat -ErrorAction SilentlyContinue
 
+# 色はターミナル（Windows Terminal）の ANSI カラーに従わせる
+$env:BAT_THEME = 'ansi'
+
 function ls  { eza --icons=always --group-directories-first $args }
 function ll  { eza -la --icons=always --group-directories-first --git --header --time-style=relative $args }
 function lt  { eza --tree --level=2 --icons=always --group-directories-first $args }

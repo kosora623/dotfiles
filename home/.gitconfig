@@ -6,6 +6,15 @@
 [delta]
 	side-by-side = true
 	navigate = true
+	# 色はターミナルの ANSI カラーに従わせる（hex の配色を使わない）
+	syntax-theme = ansi
+	minus-style = red
+	minus-emph-style = red reverse
+	plus-style = green
+	plus-emph-style = green reverse
+	line-numbers-minus-style = red
+	line-numbers-plus-style = green
+	line-numbers-zero-style = brightblack
 
 # 名前とメールはリポジトリに入れず ~/.gitconfig.local に置く（install.ps1 が入力で作る / link.ps1 が今の設定から移す）
 [include]
