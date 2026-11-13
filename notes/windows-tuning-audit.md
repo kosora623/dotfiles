@@ -117,8 +117,9 @@ Windows 10 風にした設定。2026-11-13 に読み取りだけで確認した�
 | Power Automate Desktop | ストアアプリ | **止めた**（State 2 → 1） | 目安 100〜150MB |
 | Okta Verify Activation Task | タスク `\` | **アンインストールした**（使っていない。packages からも外した） | 105MB |
 | Tailscale（tailscaled） | サービス | **手動にした**（あまり使わない。使うときだけ `gsudo Start-Service Tailscale`） | 131MB |
-| StartCN（AMD Software / RadeonSoftware） | タスク `\` | **止めた** | 約 300MB |
+| StartCN（AMD Software / RadeonSoftware） | タスク `\` | **止めた**（これだけでは常駐が止まらなかった。下の「AMD Software」） | 約 300MB |
 | StartDVR（AMD の録画） | タスク `\` | **止めた** | 6MB |
+| RadeonSoftware.exe / AMDRSServ.exe | IFEO の Debugger | **起動できなくした**（2026-11-13） | 上の 2 つ |
 | Lenovo Power Manager Background monitor | タスク `\Lenovo\Power Manager\` | 残す | 6MB |
 | Adobe Acrobat Update Task / Office の更新・保守のタスク 6 個 | タスク | 残す（一時的に動くだけ） | — |
 
@@ -150,7 +151,68 @@ Windows 標準のログオンタスク（MsCtfMonitor・SystemSoundsService な�
 - 更新で AMD Software を入れ直すと、StartCN / StartDVR のタスクが有効に戻ることがある（apply.ps1 をもう一度流せば戻る）
 - PanGPA（GlobalProtect）はサービス（PanGPS）から起動するので、スタートアップをオフにしても常駐する（約 10MB）。減らすならサービス側の検討になる
 - Tailscale はサービスを手動にした。Tailscale の更新でサービスが自動に戻ることがある
-- RadeonSoftware は StartCN を止めても、AMD Software を手で開けば起動する。ドライバーの更新通知は来なくなる
+- ~~RadeonSoftware は StartCN を止めても、AMD Software を手で開けば起動する~~ → 実際はタスクを止めてもログオン時に起動していた。下の「AMD Software」
+
+## AMD Software（RadeonSoftware）を常駐させない
+
+2026-11-13。このPCではゲームをしないので、AMD Software の画面（RadeonSoftware.exe）と録画のサーバー（AMDRSServ.exe）を起動できなくした。
+
+### なぜ
+
+- 常駐していると、**python.exe の起動が 1 回おきに約 1 秒止まっていた**（約 70 ms と約 1,030 ms が交互）。
+  名前を変えた python（`pyx.exe`）では起きず、RadeonSoftware.exe を終了すると 10 回とも 12〜14 ms になった。
+  起動のたびにゲームのデータベース（`%LOCALAPPDATA%\AMD\CN\gmdb.blb`）を書いていたので、`python.exe` をゲームとして扱っていたと思われる
+  （詳しくは notes/mise-migration.md の Python の「未解決」）
+- StartCN / StartDVR のタスクは前から無効なのに、ログオン時に `RadeonSoftware.exe atlogon`（親は `cncmd.exe`）と
+  `AMDRSServ.exe`（親は `cmd.exe`）が起動していた。起動している側は AMD External Events Utility のクライアント（`atieclxx.exe`）が有力
+- 起動後は `cncmd.exe watch <PID>` が見張っていて、終了しても起動し直す
+
+### やり方
+
+tweaks.ps1 の「スタートアップ」で、IFEO（Image File Execution Options）の `Debugger` に存在しないコマンドを書く:
+
+```
+HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\RadeonSoftware.exe  Debugger = dotfiles-blocked
+HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\AMDRSServ.exe       Debugger = dotfiles-blocked
+```
+
+Windows はこの名前の exe を起動するとき、代わりに `Debugger` のコマンドを起動しようとして失敗する（「指定されたファイルが見つかりません」）。
+AMD External Events Utility のサービスは止めない（ディスプレイの接続・切り替えや FreeSync のイベントを扱うため）。
+
+- 適用時に Defender の検出なし（`Get-MpThreatDetection`、Defender の Operational ログとも 0 件）
+- 適用直後に RadeonSoftware.exe を手で起動 → 「指定されたファイルが見つかりません」で失敗（効いている）
+
+### 影響
+
+- **ドライバー・ディスプレイの設定には影響しない**。ディスプレイドライバーと AMD のサービス（External Events / Crash Defender / AmdPpkgSvc）はそのまま。
+  AMD 独自の設定（FreeSync・色など）はドライバーとレジストリにあり、ドライバーが適用する
+- **OBS の AMF エンコーダーには影響しない**。`amfrt64.dll` はディスプレイドライバーの INF が System32 にコピーするもの
+  （ドライバーパッケージの `amfrt64.dll` とハッシュが一致）。OBS は AMD Software を通さずにこれを読み込む
+- 使えなくなるもの: Alt+R のオーバーレイ、パフォーマンスの表示・記録、録画と Instant Replay（もともと無効）、ドライバーの更新通知、
+  AMD のホットキー（Ctrl+Shift+E / S / M など、Ctrl+Alt+矢印の回転）。ホットキーが空くので、他のアプリとぶつからなくなる
+- ドライバーを更新するときは AMD のサイトから手で入れる（更新通知が来ないため）
+
+### AMD Software を一時的に開くとき
+
+1. 値を消す（管理者。キーは残してよい）:
+   ```powershell
+   gsudo { Remove-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\RadeonSoftware.exe' -Name Debugger }
+   ```
+   （gsudo にはスクリプトブロックで渡す。文字列で渡すとパスのスペースで引数が分かれることがある）
+   録画も使うなら `AMDRSServ.exe` も同じように消す
+2. スタートメニューから「AMD Software: Adrenalin Edition」を開いて使う
+3. 終わったら戻す。`apply.ps1` をもう一度実行すれば、消した値だけ書き直される（ほかの項目はすでに目的の値なので変わらない）:
+   ```powershell
+   pwsh -File .\windows\tweaks\apply.ps1
+   ```
+4. 今動いている AMD Software を終了する。トレイのアイコンから終了するか、`Stop-Process -Name RadeonSoftware, cncmd`。
+   終了しなくても、次の再起動から起動しなくなる。値が戻っていれば `cncmd.exe` が起動し直そうとしても失敗する
+
+全部元に戻すなら `revert.ps1`（ほかの項目も戻る）か、上の 1 を両方の exe について実行する。
+
+### 再起動後の確認
+
+（再起動後に追記する）
 
 ## 再現と巻き戻し
 
