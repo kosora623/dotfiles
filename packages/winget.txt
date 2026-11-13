@@ -71,7 +71,6 @@ Unity.Unity.6000
 Unity.UnityHub
 AntibodySoftware.WizTree
 UniversalAudio.UAConnect
-Okta.OktaVerify
 Apple.Bonjour
 BlenderFoundation.Blender
 Adobe.Acrobat.Pro

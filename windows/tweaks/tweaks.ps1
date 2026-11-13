@@ -45,6 +45,7 @@ function Get-TweakItems {
       Svc InventorySvc Disabled AutomaticDelayed   # 大型アップデート前の互換性チェック
       Svc whesvc       Disabled AutomaticDelayed   # 正常性と最適化の提案
       Svc DoSvc        Manual   AutomaticDelayed   # 配信の最適化（必要なときだけ起動）
+      Svc Tailscale    Manual   Automatic          # tailscaled（約 130MB）。使うときだけ gsudo Start-Service Tailscale（入っていない PC では skip）
       # SysMain / SENS / BTAGService は既定（自動 / 自動 / 手動）に戻したので入れない
     )
 
@@ -114,7 +115,7 @@ function Get-TweakItems {
       Reg "$saLM\Run32" 'Adobe CCXProcess'       Binary $off $null
       Reg "$saLM\Run32" 'Adobe Creative Cloud'   Binary $off $null
       Reg "$saLM\Run32" MDMService               Binary $off $null
-      Reg "$saLM\StartupFolder" Tailscale.lnk    Binary $off $null   # トレイのアイコンだけ。tailscaled はサービスなので動く
+      Reg "$saLM\StartupFolder" Tailscale.lnk    Binary $off $null   # トレイのアイコン（tailscale-ipn.exe）。サービスは「サービス」セクションで手動にする
       # 残す: Google Japanese Input Prelauncher / GlazeWM.lnk / vim-move.ahk / imcrvmgr（CorvusSKK）/ SecurityHealth
 
       # ストアアプリ: State 1 = ユーザーがオフにした（アプリが自分でオンに戻せない）、2 = オン、0 = アプリの既定でオフ
@@ -129,7 +130,6 @@ function Get-TweakItems {
       Reg "$appx\MicrosoftWindows.CrossDevice_cw5n1h2txyewy\CrossDevice.Start"     State DWord 1 $null
 
       # ログオン時に起動するタスク（入っていない PC では skip）
-      Task '\' 'Okta Verify Activation Task'   # Okta Verify を常駐させない（約 105MB）。使うときは手で起動する
       Task '\' StartCN    # AMD Software（RadeonSoftware 約 300MB）。ドライバーには関係ない
       Task '\' StartDVR   # AMD の録画機能（AMDRSServ）
       # 残す: Lenovo Power Manager / Adobe Acrobat Update Task / Office の更新・保守のタスク

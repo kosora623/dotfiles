@@ -27,6 +27,7 @@
 | ElevocService | 自動 → 無効 | 高 | Lenovo のマイクの AI ノイズ抑制が使えない |
 | LenovoBrightCtrl | 自動 → 無効 | 高 | Lenovo の明るさ制御（Fn キーの画面表示など）が動かないことがある |
 | DoSvc（配信の最適化） | 自動(遅延) → 手動 | 中 | 「遅延」の設定値が残っているので変更した跡と思われる。必要時に自動起動するので影響は小さい |
+| Tailscale | 自動 → 手動（2026-11-13 に追加） | — | 使うときだけ起動する。起動しないと tailnet につながらない（「5. スタートアップ」を参照） |
 | NlaSvc | 手動（既定は要確認） | 低 | ビルドで既定が違う。ネットワークが使えていれば問題なし |
 
 既定でも無効なので変更していないもの: NetTcpPortSharing / RemoteAccess / RemoteRegistry / shpamsvc / ssh-agent / tzautoupdate
@@ -110,7 +111,8 @@ Windows 10 風にした設定。2026-11-13 に読み取りだけで確認した�
 | imcrvmgr（CorvusSKK） | HKLM Run | 残す | 12MB |
 | SecurityHealth | HKLM Run | 残す | 2MB |
 | Power Automate Desktop | ストアアプリ | **止めた**（State 2 → 1） | 目安 100〜150MB |
-| Okta Verify Activation Task | タスク `\` | **止めた** | 105MB |
+| Okta Verify Activation Task | タスク `\` | **アンインストールした**（使っていない。packages からも外した） | 105MB |
+| Tailscale（tailscaled） | サービス | **手動にした**（あまり使わない。使うときだけ `gsudo Start-Service Tailscale`） | 131MB |
 | StartCN（AMD Software / RadeonSoftware） | タスク `\` | **止めた** | 約 300MB |
 | StartDVR（AMD の録画） | タスク `\` | **止めた** | 6MB |
 | Lenovo Power Manager Background monitor | タスク `\Lenovo\Power Manager\` | 残す | 6MB |
@@ -141,9 +143,9 @@ Windows 標準のログオンタスク（MsCtfMonitor・SystemSoundsService な�
 - ~~スタートアップのアプリ~~ → 2026-11-13 に「5. スタートアップ」で整理し、tweaks.ps1 の「スタートアップ」セクションに入れた
 - Microsoft.Lists・Logitech Download Assistant・StartupApproved\Run の GlazeWM は 02（オン）のまま残っているが、Run に値がない空のエントリで何も起動しない。
   REFLECTOR4 も Run の値が空。どれも害がないので触らない（アンインストールの残り。気になるなら設定画面から消える日を待つか、手で消す）
-- Okta のログオンタスクを止めたので、Okta Verify を使うときは手で起動する。
-  更新で Okta や AMD Software を入れ直すと、タスクが有効に戻ることがある（apply.ps1 をもう一度流せば戻る）
-- tailscaled（約 130MB）・PanGPA はサービスから起動するので、スタートアップをオフにしても常駐する。減らすならサービス側の検討になる
+- 更新で AMD Software を入れ直すと、StartCN / StartDVR のタスクが有効に戻ることがある（apply.ps1 をもう一度流せば戻る）
+- PanGPA（GlobalProtect）はサービス（PanGPS）から起動するので、スタートアップをオフにしても常駐する（約 10MB）。減らすならサービス側の検討になる
+- Tailscale はサービスを手動にした。Tailscale の更新でサービスが自動に戻ることがある
 - RadeonSoftware は StartCN を止めても、AMD Software を手で開けば起動する。ドライバーの更新通知は来なくなる
 
 ## 再現と巻き戻し
