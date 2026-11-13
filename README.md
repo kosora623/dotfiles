@@ -8,7 +8,7 @@ kosora の Windows 開発環境。PowerShell 7 + Windows Terminal + Neovim + Gla
 | --- | --- | --- |
 | `powershell/` | pwsh 7 プロファイル（eza/bat ラッパー、zoxide 遅延ロード、yazi 連携、starship キャッシュ） | `Documents\PowerShell\` |
 | `config/starship.toml` | プロンプト | `~\.config\` |
-| `config/mise/` | Node などのバージョン管理（mise） | `~\.config\mise\` |
+| `config/mise/` | Node / Go / Python のバージョン管理（mise） | `~\.config\mise\` |
 | `nvim/` | Neovim（lazy.nvim / telescope / neo-tree、Ctrl+T ターミナル、F5 実行） | `%LOCALAPPDATA%\nvim` |
 | `yazi/` | ファイラ yazi | `%APPDATA%\yazi\config` |
 | `glazewm/` `zebar/` | タイル型 WM とステータスバー | `~\.glzr\` |
@@ -32,7 +32,7 @@ pwsh -ExecutionPolicy Bypass -File .\install.ps1 -SkipApps # CLI と設定だけ
 # -SkipVSCode を付けると VS Code 拡張のインストールを飛ばす
 ```
 
-install.ps1 は winget → scoop → mise の PATH 設定 → git の名前とメール → link.ps1 → `mise install` → VS Code 拡張 の順に実行する。
+install.ps1 は winget → scoop → mise の PATH 設定（Node のジャンクションと shims）→ git の名前とメール → link.ps1 → `mise install` → VS Code 拡張 の順に実行する。
 
 Windows のチューニング（サービス・レジストリ・タスク・見た目）は install.ps1 とは別に、内容を確かめてから適用する:
 
@@ -75,6 +75,7 @@ pwsh -File .\link.ps1 -Pull   # 差分を見せてファイルごとに確認し
 ## メモ
 
 - starship を更新したら `Update-ShellCache` を1回実行（初期化スクリプトをキャッシュして起動を速くしている）
-- mise は shims だけで使う（profile で activate しない）。`%LOCALAPPDATA%\mise\shims` が PATH に入っていれば、フォルダごとの mise.toml / .node-version に従って切り替わる
+- mise は profile で activate しない。Go / Python は `%LOCALAPPDATA%\mise\shims` 経由で、フォルダごとの mise.toml / .python-version に従って切り替わる
+- Node だけは shims を通さず、`%LOCALAPPDATA%\mise\installs\node\lts`（mise が作るジャンクション）を User PATH の shims より前に置いている。shims は 1 回の起動に約 90 ms かかるため（`node -v` 116 → 28 ms、`npm run` 432 → 317 ms）。代わりにフォルダごとの Node の切り替え（.node-version / .nvmrc）は効かない。必要になったら PATH からこの項目を外せば shims に戻る
 - プロンプトの git 表示はブランチ名のみ（速度優先）。状態は git status / lazygit で見る
 - Windows Terminal と CorvusSKK は保存時にファイルを置き換えるので、リンクではなくコピー。設定を変えたらリポジトリ側にもコピーし直す
