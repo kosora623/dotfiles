@@ -7,10 +7,11 @@ node = "lts"
 go = "1.27"
 # グローバルの Python には何も入れない。ツールは uv tool、プロジェクトは uv venv
 python = "3.13"
+# shorthand の vendor は temurin（"25" = Temurin 25 LTS）。Oracle にするなら "oracle-25"
+# JAVA_HOME（User 環境変数）は %LOCALAPPDATA%\mise\installs\java\25 のジャンクションを指す。mvnw は JAVA_HOME が必須
+java = "25"
 
-# 今は winget で入れていて、mise への移行を保留しているもの（手順は notes/mise-migration.md）。
-# 移すときはコメントを外して mise install し、winget 側をアンインストールする
-# java = "25"   # shorthand の vendor は temurin（"25" = Temurin 25）。Oracle にするなら "oracle-25"
+# まだ入れていないもの
 # bun = "latest"
 
 [settings]

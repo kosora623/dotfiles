@@ -68,7 +68,19 @@ if (-not (Test-Path $local)) {
 & (Join-Path $repo 'link.ps1')
 
 # ---- 6. tools via mise (after link, so ~/.config/mise/config.toml is in place)
-if (Has mise) { mise install }
+if (Has mise) {
+  mise install
+  # mvnw.cmd needs JAVA_HOME. Point it at the major-version junction (e.g. installs\java\25)
+  # so patch upgrades keep working without touching the variable.
+  $jv = "$(mise current java 2>$null)"
+  if ($jv -match '^(\d+)') {
+    $jh = Join-Path $env:LOCALAPPDATA "mise\installs\java\$($Matches[1])"
+    if ((Test-Path $jh) -and [Environment]::GetEnvironmentVariable('JAVA_HOME','User') -ne $jh) {
+      [Environment]::SetEnvironmentVariable('JAVA_HOME', $jh, 'User')
+      Write-Host "JAVA_HOME -> $jh"
+    }
+  }
+}
 
 # ---- 7. VS Code extensions
 if (-not $SkipVSCode -and (Has code)) {
