@@ -57,12 +57,18 @@ function cdd {
 # 6. zoxide の遅延ロード（初回実行時のみ初期化）
 # ====================================================
 function cd {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '',
+        Justification = 'zoxide init の出力を読み込む公式の方法。初回の cd でだけ実行する')]
+    param()
     Remove-Item Function:cd -ErrorAction SilentlyContinue
     Invoke-Expression (& zoxide init powershell --cmd cd | Out-String)
     __zoxide_z @args
 }
 
 function cdi {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '',
+        Justification = 'zoxide init の出力を読み込む公式の方法。初回の cdi でだけ実行する')]
+    param()
     Remove-Item Function:cdi -ErrorAction SilentlyContinue
     Invoke-Expression (& zoxide init powershell --cmd cd | Out-String)
     __zoxide_zi @args
@@ -135,7 +141,7 @@ function Get-GitBranchFast {
 
 function Invoke-Starship-PreCommand {
     $b = $null
-    try { $b = Get-GitBranchFast } catch {}
+    try { $b = Get-GitBranchFast } catch { $b = $null }   # 読めなければブランチ名を出さないだけ
     # 空文字を代入すると変数が残って「on 」だけ出るので、無いときは $null で消す
     if ($b) { $env:STARSHIP_GIT_BRANCH = $b } else { $env:STARSHIP_GIT_BRANCH = $null }
 }

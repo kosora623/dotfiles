@@ -9,8 +9,14 @@ function Has($c) { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
 function Read-List($file) {
   Get-Content (Join-Path $repo $file) | ForEach-Object { ($_ -split '#')[0].Trim() } | Where-Object { $_ }
 }
-function Refresh-Path {
+function Update-SessionPath {
   $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+}
+function Install-Scoop {
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '',
+    Justification = 'Official scoop installer (irm get.scoop.sh | iex); there is no other supported way to install it.')]
+  param()
+  Invoke-RestMethod get.scoop.sh | Invoke-Expression
 }
 
 # ---- 1. winget
@@ -26,13 +32,13 @@ foreach ($id in $ids) {
   Write-Host "install $id" -ForegroundColor Cyan
   winget install --id $id -e --accept-source-agreements --accept-package-agreements
 }
-Refresh-Path
+Update-SessionPath
 
 # ---- 2. scoop
 if (-not (Has scoop)) {
   Write-Host "install scoop" -ForegroundColor Cyan
-  Invoke-RestMethod get.scoop.sh | Invoke-Expression
-  Refresh-Path
+  Install-Scoop
+  Update-SessionPath
 }
 foreach ($l in Read-List 'packages\scoop.txt') {
   if ($l -match '^bucket\s+(\S+)') { scoop bucket add $Matches[1] 2>$null | Out-Null }
@@ -43,7 +49,7 @@ foreach ($l in Read-List 'packages\scoop.txt') {
 $shims = Join-Path $env:LOCALAPPDATA 'mise\shims'
 $u = [Environment]::GetEnvironmentVariable('Path','User')
 if (($u -split ';') -notcontains $shims) { [Environment]::SetEnvironmentVariable('Path', "$shims;$u", 'User') }
-Refresh-Path
+Update-SessionPath
 
 # ---- 4. git identity (kept out of the repo)
 $local = Join-Path $HOME '.gitconfig.local'

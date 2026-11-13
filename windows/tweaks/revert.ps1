@@ -16,14 +16,14 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'tweaks.ps1')
 
 $state = Read-TweakState
-$items = @(Select-TweakItems)
+$items = @(Select-TweakItem)
 $apps  = @($items | Where-Object { Test-TweakIsApp $_ })
 $ops = foreach ($i in $items | Where-Object { -not (Test-TweakIsApp $_) }) {
   $id = Get-TweakId $i
   if (-not $ToDefault -and $state.ContainsKey($id)) { New-TweakOp $i $state[$id] '記録' }
   else { New-TweakOp $i (ConvertTo-TweakState $i -Default) '既定' }
 }
-$result = Invoke-Tweaks $ops -DryRun:$DryRun
+$result = Invoke-Tweak $ops -DryRun:$DryRun
 Show-TweakLog $ops $result
 Show-AppRestoreHint $apps
 

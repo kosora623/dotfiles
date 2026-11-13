@@ -33,7 +33,7 @@ function Win32([string]$Path, [string]$Restore, [string]$ExtraArgs = '') {
 function Store([string]$Id) { "winget install -s msstore $Id  / ストア: ms-windows-store://pdp/?ProductId=$Id" }
 function Test-TweakIsApp($i) { $i.kind -in 'appx', 'appxprov', 'win32', 'defaultrun' }
 
-function Get-TweakItems {
+function Get-TweakItem {
   $cv   = 'HKCU:\Software\Microsoft\Windows\CurrentVersion'
   $adv  = "$cv\Explorer\Advanced"
   $cdm  = "$cv\ContentDeliveryManager"
@@ -226,8 +226,8 @@ function Get-TweakItems {
 }
 
 # Lenovo 以外なら Lenovo セクションを外す
-function Select-TweakItems {
-  $items = @(Get-TweakItems)
+function Select-TweakItem {
+  $items = @(Get-TweakItem)
   if ((Get-CimInstance Win32_ComputerSystem).Manufacturer -notmatch 'LENOVO') {
     Write-Host 'Lenovo ではないので Lenovo セクションを飛ばします' -ForegroundColor DarkGray
     $items = @($items | Where-Object { $_.section -ne 'Lenovo' })
@@ -467,7 +467,7 @@ public static class TweakAppBar {
 }
 
 # ops を HKCU 側と管理者が必要な側に分けて実行する。管理者側は gsudo で 1 回だけ昇格する
-function Invoke-Tweaks($ops, [switch]$DryRun) {
+function Invoke-Tweak($ops, [switch]$DryRun) {
   $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
   $all = @{ log = @{}; before = @{}; changed = @(); failed = @() }
   $groups = @(

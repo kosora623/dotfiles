@@ -17,8 +17,8 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'tweaks.ps1')
 
-$ops = foreach ($i in Select-TweakItems) { New-TweakOp $i (ConvertTo-TweakState $i) }
-$result = Invoke-Tweaks $ops -DryRun:$DryRun
+$ops = foreach ($i in Select-TweakItem) { New-TweakOp $i (ConvertTo-TweakState $i) }
+$result = Invoke-Tweak $ops -DryRun:$DryRun
 Show-TweakLog $ops $result
 
 if ($DryRun) { Write-Host "`n-DryRun なので何も変えていません。" -ForegroundColor Yellow; exit }
