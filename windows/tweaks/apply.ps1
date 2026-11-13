@@ -4,7 +4,7 @@
 #   pwsh -File .\windows\tweaks\apply.ps1                    # 適用
 #   pwsh -File .\windows\tweaks\apply.ps1 -RestartExplorer   # 適用して explorer を再起動
 #
-# - 項目の一覧と既定値は tweaks.ps1、各項目の影響は notes/windows-tuning-audit.md
+# - 項目の一覧・既定値・各項目の影響は tweaks.ps1
 # - HKLM・サービス・タスクは gsudo で 1 回だけ昇格して変える
 # - 変える項目の変更前の値を ~\dotfiles-backup\windows-tweaks.json に記録する（revert.ps1 が使う）。
 #   記録は最初の 1 回だけ残し、2 回目以降に上書きしない。

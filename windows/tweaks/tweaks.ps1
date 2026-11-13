@@ -1,6 +1,6 @@
 # tweaks.ps1 - apply.ps1 / revert.ps1 が共有する項目の定義と処理
 #   apply.ps1 / revert.ps1 から dot-source する。読み込むだけでは何も変更しない（pwsh 7 用）
-#   調べた経緯と各項目の影響: notes/windows-tuning-audit.md
+#   各項目の影響は下のコメントに書く（調べた経緯はローカルの notes/ にあり、リポジトリには入れない）
 
 $TweakLib       = Join-Path $PSScriptRoot 'tweaks.ps1'
 $TweakStateFile = Join-Path $HOME 'dotfiles-backup\windows-tweaks.json'   # apply.ps1 が変更前の値を記録する
@@ -44,6 +44,7 @@ function Get-TweakItem {
   $saLM  = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved'
   $appx  = 'HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData'
   $off   = @(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)   # StartupApproved のオフ
+  $ifeo  = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options'
 
   $sections = [ordered]@{
     # 開始の種類の変更は再起動後に効く
@@ -144,6 +145,13 @@ function Get-TweakItem {
       # ログオン時に起動するタスク（入っていない PC では skip）
       Task '\' StartCN    # AMD Software（RadeonSoftware 約 300MB）。ドライバーには関係ない
       Task '\' StartDVR   # AMD の録画機能（AMDRSServ）
+      # AMD Software はタスクを止めても、ログオン時に cncmd.exe（AMD External Events から？）経由で起動する。
+      # IFEO の Debugger に存在しないコマンドを書いて、起動そのものを失敗させる。ドライバー・AMF（OBS のエンコーダー）には関係ない。
+      # 常駐していると python.exe の起動が 1 回おきに約 1 秒止まっていた。
+      # AMD Software を一時的に開くとき: gsudo { Remove-ItemProperty '<IFEO>\RadeonSoftware.exe' -Name Debugger } で値を消して開き、
+      # 終わったら apply.ps1 をもう一度実行して戻す（今動いているものは Stop-Process -Name RadeonSoftware, cncmd で終了）
+      Reg "$ifeo\RadeonSoftware.exe" Debugger String 'dotfiles-blocked' $null
+      Reg "$ifeo\AMDRSServ.exe"      Debugger String 'dotfiles-blocked' $null
       # 残す: Lenovo Power Manager / Adobe Acrobat Update Task / Office の更新・保守のタスク
     )
 
