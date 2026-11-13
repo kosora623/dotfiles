@@ -151,7 +151,19 @@ function Invoke-Starship-PreCommand {
 . (Join-Path $ShellCacheDir "starship.ps1")
 
 # ====================================================
-# 10. PSReadLine の予測補完設定
+# 10. PSReadLine の予測補完と履歴
+#     秘密情報を含む行は履歴ファイルに書かない（このセッション中は ↑ で呼び出せる）。
+#     PSReadLine 標準の判定（token / password / secret / apikey など）に加えて、
+#     --key などのオプションと、よくあるキーの形（AIza… / sk-… / ghp_… など）も止める。
+#     1 回の Set-PSReadLineOption にまとめているのは起動時間のため（呼び出し 1 回で約 1ms）
 # ====================================================
-Set-PSReadLineOption -PredictionSource History
-Set-PSReadLineOption -PredictionViewStyle ListView
+Set-PSReadLineOption -PredictionSource History -PredictionViewStyle ListView -AddToHistoryHandler {
+    param([string]$line)
+    $sensitive = '(?ix) --?(api[-_]?)?(key|token|secret|pass(word|wd)?|pwd)\b
+        | \b(bearer|authorization|client[-_]?secret|private[-_]?key)\b
+        | AIza[0-9A-Za-z_\-]{35} | \bsk-[A-Za-z0-9_\-]{20,} | \bgh[pousr]_[A-Za-z0-9]{30,}
+        | \bgithub_pat_ | \bxox[abprs]- | \bAKIA[0-9A-Z]{16}\b
+        | \bmysql\b.*\s-p\S | \blogin\b.*\s-p\s'
+    if ([regex]::IsMatch($line, $sensitive)) { return [Microsoft.PowerShell.AddToHistoryOption]::MemoryOnly }
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetDefaultAddToHistoryOption($line)
+}
