@@ -210,9 +210,16 @@ AMD External Events Utility のサービスは止めない（ディスプレイ�
 
 全部元に戻すなら `revert.ps1`（ほかの項目も戻る）か、上の 1 を両方の exe について実行する。
 
-### 再起動後の確認
+### 再起動後の確認（2026-11-13、サインインから約 9 分後）
 
-（再起動後に追記する）
+- RadeonSoftware.exe・AMDRSServ.exe・cncmd.exe・CPUMetricsServer.exe は**どれも動いていない**。
+  動いている AMD のプロセスはドライバー側の 4 つだけ（amdfendrsr / atiesrxx / atieclxx / AmdPpkgSvc）
+- **cncmd.exe が起動の失敗を繰り返していない**: 30 秒間 100 ms ごとに見て、cncmd.exe・RadeonSoftware.exe などは一度も現れなかった。
+  AMD の 4 つのプロセスの CPU 使用率は 0.00%（パフォーマンスカウンター、2 秒 × 5 回）。
+  Application ログに起動の失敗の記録は無く、HKCU\Software\AMD\CN の `LastRecoveryTime` も再起動前のまま
+- `python -V` 10 回: 33 / 10 / 9 / 10 / 9 / 9 / 8 / 9 / 9 / 10 ms（1 秒の停止なし。shims 経由は 90〜107 ms で、これは shims のコスト）
+- OBS の `obs-amf-test`: H.264 / HEVC 対応（再起動前と同じ）。ffmpeg の `h264_amf` / `hevc_amf` のエンコードも成功
+- 起動していたのが何だったか（atieclxx.exe か）は、起動そのものが失敗して跡が残らないので確定できなかった
 
 ## 再現と巻き戻し
 

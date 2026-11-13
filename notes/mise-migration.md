@@ -263,7 +263,11 @@ Go はほとんど使っていないので、移行のリスクは小さい。
 **空いた容量: 約 4.8 GB**（消した 4,876 MB − mise の Python 62 MB − uv tool の ipython 30 MB）。
 ほかに uv のキャッシュが 121 MB 増えた。pip のキャッシュ（`%LOCALAPPDATA%\pip\cache`、226 MB）は残している。
 
-#### 未解決: mise の python.exe が 1 回おきに約 1 秒かかる
+#### 解決済み: mise の python.exe が 1 回おきに約 1 秒かかっていた
+
+**2026-11-13 に解決**: AMD Software（RadeonSoftware.exe）を IFEO で起動できなくした（windows/tweaks の「スタートアップ」）。
+再起動後の `python -V` は 10 回とも 8〜10 ms。経緯と影響は notes/windows-tuning-audit.md の「AMD Software」。以下は調べた記録。
+
 
 - `python -V` / `python -c 0` を続けて実行すると **約 70 ms と約 1,030 ms が交互に出る**（shims を通さず直接実行しても、`-I -S -E` でも、`cmd /c` 経由でも同じ）
 - プロセスの開始〜終了の時刻で見ても 1 秒生きている（PowerShell の待ち方の問題ではない）
@@ -282,8 +286,9 @@ Go はほとんど使っていないので、移行のリスクは小さい。
 - **犯人は AMD Software の RadeonSoftware.exe**（2026-11-13 に確認）: 終了すると `python -V` は 10 回とも 12〜14 ms
   （終了前は 61〜77 ms と 約 1,030 ms の交互）。起動のたびに `%LOCALAPPDATA%\AMD\CN\gmdb.blb`（ゲームのデータベース）を
   書いていたので、`python.exe` をゲームとして検出して何かしていると思われる。winget の Python でも同じだったはず（同じ名前）
-- 対策の候補（まだ何もしていない）: AMD Software の「ゲーム」の一覧から python.exe を外す / ゲームの自動検出を切る、
-  RadeonSoftware.exe を常駐させない（ドライバー自体は要る）
+- 対策の候補: AMD Software の「ゲーム」の一覧から python.exe を外す / ゲームの自動検出を切る、
+  RadeonSoftware.exe を常駐させない（ドライバー自体は要る）→ **常駐させない方法にした**（ゲームをしないため）
+- 補足: 終了後に cncmd.exe が起動し直した RadeonSoftware.exe では止まらなかった。ログオン時から動いていたものだけで起きていた
 
 #### 次に venv を作るときの注意
 
