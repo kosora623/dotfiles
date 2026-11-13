@@ -1,7 +1,7 @@
 # Python・Go・Java の mise への移行の検討
 
 winget で入れている Python・Go・Java を mise（shims だけで使う運用）に移すための調査と手順。
-2026-11-13 時点の調査。同じ日に **Go と Python を移行した**（それぞれの「実施結果」）。Java はまだ何も変更していない。
+2026-11-13 時点の調査。同じ日に **Go・Python・Java の 3 つとも移行した**（それぞれの「実施結果」）。
 
 - mise 2026.11.2（winget、2026.11.7 が出ている）。今は Node だけ（`node = "lts"` → 26.13.1）
 - shims: `%LOCALAPPDATA%\mise\shims`（User PATH の先頭）、`windows_shim_mode = "exe"`
@@ -380,6 +380,24 @@ JAVA_HOME = %LOCALAPPDATA%\mise\installs\java\25     （User 環境変数。実�
    - Android Studio で Gradle Sync（JBR のままなので変わらないはず）
 7. `packages/winget.txt` から `Oracle.JDK.26` を消す
 
+### 実施結果（2026-11-13）
+
+- config.toml を `java = "25"` にして `mise install java` → **Temurin 25.0.5+8 LTS**（10 秒）
+  - ジャンクション `25` / `25.0` / `lts` / `latest` ができた（実体のフォルダ名は `25.0.5+8.0.LTS`）
+  - `mise x` 経由のプロセスには mise が `JAVA_HOME`（実体のフォルダ）を入れる
+- User の `JAVA_HOME` を `%LOCALAPPDATA%\mise\installs\java\25` にした（前の値は `C:\Program Files\Java\jdk-26.0.1`。バックアップの `env-user.txt`）
+- `winget uninstall Oracle.JDK.26` → **javapath のフォルダと Machine PATH の項目、`C:\Program Files\Java`、レジストリの `JavaSoft` が全部消えた**
+- Machine PATH に残っていた、無いフォルダの `C:\Program Files\Java\jdk-26\bin` を消した
+  （gsudo に `-File script.ps1 -Remove 'C:\Program Files\...'` と渡すとスペースで引数が分かれて消えないので、値をスクリプトに直接書いた）
+- 確認（新しい環境変数で）:
+  - `java` / `javac` → shims、`java -version` → Temurin 25.0.5
+  - mvnw の 3 種類（wrapper 3.3.4 / 3.3.2 only-script / 古いもの）すべてで `mvnw.cmd -v` が `runtime: ...\installs\java\25`
+  - release 25 のプロジェクトで `mvnw test` → 20 件すべて成功。release 21 のプロジェクトもコンパイルは通った
+    （テストの失敗は課題の未実装部分のアサーションで、JDK とは関係ない）
+- `install.ps1`: `mise install` の後に、`mise current java` のメジャー番号のジャンクションを User の `JAVA_HOME` に入れる処理を足した
+- `packages/winget.txt` から `Oracle.JDK.26` を消した
+- まだ: VS Code の「Java: Configure Java Runtime」と Android Studio の Gradle Sync（どちらも開き直して確認する）
+
 ### 戻し方
 
 1. `winget install Oracle.JDK.26`（または `Oracle.JDK.25`）。javapath が Machine PATH に戻る
@@ -391,17 +409,14 @@ JAVA_HOME = %LOCALAPPDATA%\mise\installs\java\25     （User 環境変数。実�
 
 ## 4. リポジトリで直すもの（移行するとき）
 
-- `config/mise/config.toml`: 移したものの行を有効にする。java のコメントを「shorthand は temurin」に直す
-- `packages/winget.txt`: `GoLang.Go` / `Oracle.JDK.26` / `Python.Python.3.13` / `Python.Python.3.11` / `Python.Launcher` を消す
-- `install.ps1`: 新しい PC で JAVA_HOME を設定する処理を足すか検討（`mise install` の後に `installs\java\25` を User の JAVA_HOME にする）
-- `CLAUDE.md` / `README.md`: 「Python / Go / Java は移行保留」と「`[env]` は効かない」の記述を直す
+すべて済み（config.toml / winget.txt / install.ps1 / README / CLAUDE.md）。
 
 ## 5. まだ確かめていないこと
 
-- Oracle JDK / Go のアンインストールで Machine PATH の項目が本当に消えるか
-- mise の java で `installs\java\25` のジャンクションができるか（node ではできている）
-- shims 経由の java に mise が JAVA_HOME を入れるか
-- only-script の mvnw.cmd が JAVA_HOME 無しで PATH の java（= shim）を使えるか（JAVA_HOME を設定するなら関係ない）
+- ~~Oracle JDK / Go のアンインストールで Machine PATH の項目が本当に消えるか~~ → どちらも消えた
+- ~~mise の java で `installs\java\25` のジャンクションができるか~~ → できた
+- ~~shims 経由の java に mise が JAVA_HOME を入れるか~~ → 入る（`mise x` で確認）
+- only-script の mvnw.cmd が JAVA_HOME 無しで PATH の java（= shim）を使えるか（JAVA_HOME を設定したので関係なくなった。未確認のまま）
 - ~~mise の Python で `python3` の shim ができるか、tkinter が使えるか~~ → どちらも OK（Python の実施結果）
 - ~~`winget uninstall Python.Launcher` で `C:\WINDOWS\py.exe` も消えるか~~ → 消えた
 - `windows_shim_mode` を変えると shims の約 90 ms が減るか（バージョンの切り替えができなくなる可能性あり）

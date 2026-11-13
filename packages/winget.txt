@@ -39,7 +39,6 @@ Microsoft.VisualStudio.2022.Community
 # --- Languages / SDK
 Git.Git
 Rustlang.Rustup
-Oracle.JDK.26
 Kitware.CMake
 Microsoft.WindowsSDK.10.0.26100
 Google.CloudSDK
