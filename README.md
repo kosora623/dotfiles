@@ -34,6 +34,13 @@ pwsh -ExecutionPolicy Bypass -File .\install.ps1 -SkipApps # CLI と設定だけ
 
 install.ps1 は winget → scoop → mise の PATH 設定 → git の名前とメール → link.ps1 → `mise install` → VS Code 拡張 の順に実行する。
 
+Windows のチューニング（サービス・レジストリ・タスク・見た目）は install.ps1 とは別に、内容を確かめてから適用する:
+
+```powershell
+pwsh -File .\windows\tweaks\apply.ps1 -DryRun   # 何が変わるかだけ表示
+pwsh -File .\windows\tweaks\apply.ps1           # 適用（HKLM とサービスは gsudo で昇格）。戻すときは revert.ps1
+```
+
 ## 今の PC で設定だけリンク
 
 ```powershell
