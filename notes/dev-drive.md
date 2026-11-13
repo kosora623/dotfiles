@@ -1,7 +1,8 @@
 # Dev Drive と Defender のパフォーマンスモードの検討
 
 git・node・Rust の作業を速くするために、Dev Drive（ReFS）と Defender のパフォーマンスモードを使うか検討した。
-2026-11-13 時点の調査と提案だけで、**まだ何も変更していない**。
+2026-11-13 時点の調査と提案。**Dev Drive と Defender はまだ何も変更していない**。
+使っていない Windows 側の pnpm だけは同じ日に削除した（「9.」）。
 
 - 調べ方: 管理者ではない権限で、読み取りだけ
 - 環境: Windows 11 Home 10.0.26200（Lenovo ノート）、メモリ・速さ優先
@@ -31,7 +32,7 @@ git・node・Rust の作業を速くするために、Dev Drive（ReFS）と Def
 | その他のリポジトリ | `%USERPROFILE%\AndroidStudioProjects` ほか、`dotfiles` | 合計 0.1 GB 未満 | |
 | node_modules（Documents 配下） | リポジトリの中に 4 つ | 合計 約 0.8 GB / **約 5.5 万ファイル** | 小さいファイルが多い = Dev Drive が効きやすい |
 | npm のキャッシュ | `%LOCALAPPDATA%\npm-cache` | 1.76 GB | `npm_config_cache` は未設定 |
-| pnpm のストア | `%LOCALAPPDATA%\pnpm\store\v10` | 約 1 GB | **今のプロジェクトはどれも使っていない**（下記） |
+| pnpm のストア | `%LOCALAPPDATA%\pnpm\store\v10` | 約 1 GB | **今のプロジェクトはどれも使っていない**（下記）。2026-11-13 に pnpm ごと削除済み |
 | mise（Node 本体） | `%LOCALAPPDATA%\mise` | 0.11 GB | Node 26 のみ |
 | cargo | `%USERPROFILE%\.cargo` | 0.58 GB（うち registry 0.42 GB） | `CARGO_HOME` は未設定（既定の場所） |
 | rustup | `%USERPROFILE%\.rustup` | 1.34 GB（toolchain は stable-msvc の 1 つ） | `RUSTUP_HOME` は未設定 |
@@ -211,7 +212,7 @@ Dev Drive 上のリポジトリで `detected dubious ownership` と言われる�
 4. 設定 → ディスクとボリューム → D: を削除 → VHD を切断（または `Dismount-DiskImage`）→ `C:\DevDrive\dev.vhdx` を削除
 5. パフォーマンスモードは Dev Drive が無ければ何もしないので、そのままでよい（戻すなら `Set-MpPreference -PerformanceModeStatus Disabled`）
 
-## 9. Windows 側の pnpm を消す（提案。まだやっていない）
+## 9. Windows 側の pnpm を消す（2026-11-13 実施）
 
 Dev Drive とは別に、使っていない Windows 側の pnpm を消す。WSL の PATH から Windows の pnpm が消え、約 1.2 GB 空く。
 
@@ -254,12 +255,25 @@ Dev Drive とは別に、使っていない Windows 側の pnpm を消す。WSL 
    ```powershell
    Remove-Item -Recurse -Force "$env:LOCALAPPDATA\pnpm", "$env:LOCALAPPDATA\pnpm-cache", "$env:LOCALAPPDATA\pnpm-state"
    ```
-6. **WSL を止めて、ターミナルを開き直す**。WSL は起動したときの Windows 側の PATH を引き継ぐので、古いセッションが残っていると前の PATH のまま
+6. **WSL を止めて、ターミナルとエディタを全部閉じる**
    ```powershell
    wsl --shutdown
    ```
+   - `SetEnvironmentVariable(..., 'User')` は保存先（レジストリ）を変えるだけで、**今開いているシェルの `$env:PATH` / `$env:PNPM_HOME` は古いまま**。そこから起動した WSL も古い PATH を引き継ぐ
+   - Windows Terminal はウィンドウを全部閉じてから開き直す。VS Code の統合ターミナルは VS Code ごと再起動する
 
 ### 確認
+
+**手順 6 のあとに開いた新しいターミナルで** 行う。同じシェルで続けて実行すると、消したはずの値が出る（実際に一度そうなった）。
+
+保存された値だけを見るなら、古いシェルからでも確認できる:
+
+```powershell
+[Environment]::GetEnvironmentVariable('PNPM_HOME', 'User')                                       # 空
+[Environment]::GetEnvironmentVariable('Path', 'User') -split ';' | Select-String -SimpleMatch pnpm   # 何も出ない
+```
+
+新しいターミナルで:
 
 ```powershell
 # Windows 側
@@ -270,11 +284,30 @@ npm -v                                # npm には影響しない
 # WSL 側（PATH から Windows の pnpm が消えたか）
 wsl -d Ubuntu -e bash -c 'echo $PATH | tr : "\n" | grep -i pnpm'               # 何も出ない
 wsl -d Ubuntu -e bash -ic 'type -a pnpm'                                          # WSL の pnpm（~/.local/share/pnpm/pnpm）だけ
-wsl -d Ubuntu -e bash -ic 'cd ~/<project>/<frontend> && pnpm --version'           # 11.0.8
+wsl -d Ubuntu -e bash -ic 'cd ~/PROJECT/FRONTEND && pnpm --version'              # 11.0.8
 ```
+
+- `PROJECT/FRONTEND` は、WSL 上の Web プロジェクトのフロントエンドの実際のディレクトリに置き換える（`<...>` のまま実行すると bash がリダイレクトと解釈して構文エラーになる）
 
 - 消したあとは、`.bashrc` を読まない非対話シェルでは **pnpm が見つからなくなる**（今までは Windows の pnpm が代わりに使われていた）。
   スクリプトやエディタのタスクで pnpm が要るなら、WSL 側の `~/.profile` で `PNPM_HOME` を PATH に足す（`/etc/wsl.conf` は変えない）
+
+### 結果（2026-11-13）
+
+手順 1〜6 を実行した。確認は、レジストリに保存された値から PATH を作り直したシェル（新しいターミナルと同じ条件）で行った。
+
+| 確認 | 結果 |
+|---|---|
+| 保存されたユーザーの `PNPM_HOME` | なし |
+| 保存されたユーザー PATH の pnpm の項目 | 0 件（Path の型は REG_SZ のまま） |
+| `%LOCALAPPDATA%\pnpm`・`pnpm-cache`・`pnpm-state` | 3 つとも削除済み（約 1.2 GB 空いた） |
+| Windows: `Get-Command pnpm -All` | 何も出ない |
+| Windows: `npm -v` | 11.20.0（影響なし） |
+| WSL 非対話: PATH の pnpm の項目 | 0 件。`command -v pnpm` は見つからない（想定どおり） |
+| WSL 対話: `type -a pnpm` | `~/.local/share/pnpm/pnpm` だけ |
+| WSL 対話: プロジェクト内の `pnpm --version` | 11.0.8 |
+
+- 実行したのと同じシェルで確認すると、`$env:PNPM_HOME` や WSL の PATH に古い値が出る。保存先は消えているので問題ない（手順 6 の注意を参照）
 
 ### 戻し方
 
