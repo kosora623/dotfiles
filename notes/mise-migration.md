@@ -273,8 +273,14 @@ Go はほとんど使っていないので、移行のリスクは小さい。
   （70 / 1,030 ms の交互がそのまま再現）。`Get-MpPerformanceReport` では python 関係の検査は Prefetch の
   `PYTHON.EXE-*.pf` の 2 回・計 0.4 ms だけで、python.exe / python313.dll は出てこない。
   記録中の Defender の作業は全部で約 0.35 秒（大半は RadeonSoftware.exe の `gmdb.blb`）で、遅れの合計の約 6 秒に届かない
-- 次の候補: AMD Software（RadeonSoftware.exe がプロセスの起動のたびに `%LOCALAPPDATA%\AMD\CN\gmdb.blb` を書いている。ゲーム検出）、
-  python.org の署名付きビルドとの比較
+- **原因は実行ファイルの名前**（2026-11-13 に確認）: 同じ python.exe を `pyx.exe` という名前でコピーすると、
+  毎回 約 10 ms で止まらない（`PYTHONHOME` の有無は関係ない）。`python.exe` という名前だと速いときでも 約 65 ms、1 回おきに 約 1 秒
+  - 止まるのは起動時（最初の出力より前）。終了時ではない
+  - プロセスに読み込まれる DLL は python.exe / python313.dll / VCRUNTIME140.dll だけ（外部の DLL の注入は無い）
+  - IFEO（Image File Execution Options）に python.exe の項目は無い。AppCompatFlags\Layers にも無い
+  - → `python.exe` という名前のプロセスの起動を監視しているソフトがあると思われる
+- 次に試すこと（どれもシステムに触るので要相談）: Process Monitor か WPR で起動時の 1 秒を記録する、
+  常駐ソフト（AMD Software の RadeonSoftware.exe など。起動のたびに `%LOCALAPPDATA%\AMD\CN\gmdb.blb` を書いている）を 1 つずつ止めて比べる
 
 #### 次に venv を作るときの注意
 
