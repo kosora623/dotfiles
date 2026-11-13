@@ -279,8 +279,11 @@ Go はほとんど使っていないので、移行のリスクは小さい。
   - プロセスに読み込まれる DLL は python.exe / python313.dll / VCRUNTIME140.dll だけ（外部の DLL の注入は無い）
   - IFEO（Image File Execution Options）に python.exe の項目は無い。AppCompatFlags\Layers にも無い
   - → `python.exe` という名前のプロセスの起動を監視しているソフトがあると思われる
-- 次に試すこと（どれもシステムに触るので要相談）: Process Monitor か WPR で起動時の 1 秒を記録する、
-  常駐ソフト（AMD Software の RadeonSoftware.exe など。起動のたびに `%LOCALAPPDATA%\AMD\CN\gmdb.blb` を書いている）を 1 つずつ止めて比べる
+- **犯人は AMD Software の RadeonSoftware.exe**（2026-11-13 に確認）: 終了すると `python -V` は 10 回とも 12〜14 ms
+  （終了前は 61〜77 ms と 約 1,030 ms の交互）。起動のたびに `%LOCALAPPDATA%\AMD\CN\gmdb.blb`（ゲームのデータベース）を
+  書いていたので、`python.exe` をゲームとして検出して何かしていると思われる。winget の Python でも同じだったはず（同じ名前）
+- 対策の候補（まだ何もしていない）: AMD Software の「ゲーム」の一覧から python.exe を外す / ゲームの自動検出を切る、
+  RadeonSoftware.exe を常駐させない（ドライバー自体は要る）
 
 #### 次に venv を作るときの注意
 
