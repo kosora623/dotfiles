@@ -50,7 +50,11 @@
 
 既定のままのもの: `EnablePrefetcher=3`、Game DVR、位置情報、Copilot / Recall のポリシー（ポリシー自体がない）
 
-アプリ: Copilot・ウィジェット（WebExperience）・OneDrive・Bing News/Weather はインストールされていない（いつ消したかは不明）
+アプリ: ウィジェット（WebExperience）・OneDrive・Bing News/Weather・ストア版 Copilot はインストールされていない（いつ消したかは不明）。
+ほかに Clipchamp・Solitaire・Xbox アプリ（GamingApp / Xbox.TCUI）・スマートフォン連携（YourPhone）・Family も今のユーザーにはない。
+ただしプロビジョニング（新しいユーザー用）には WebExperience・Bing News/Weather・Clipchamp などが残っていた（2026-11-13 に確認）。
+Edge ベースの Win32 版 Copilot（`C:\Program Files (x86)\Microsoft\Copilot`）は入っていた（2026-10 に入った）。
+→ tweaks.ps1 の「アプリ」セクションで、今のユーザー・プロビジョニング・Win32 版・既定ユーザーの OneDriveSetup をまとめて消す
 
 ## 3. スケジュールタスク
 

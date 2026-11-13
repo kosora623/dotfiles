@@ -18,7 +18,7 @@ kosora の Windows 開発環境。PowerShell 7 + Windows Terminal + Neovim + Gla
 | `corvusskk/` | SKK 日本語入力（コピーで配置） | `%APPDATA%\CorvusSKK\` |
 | `home/` | .gitconfig / .latexmkrc / .bashrc など | `~\` |
 | `packages/` | winget / scoop / VS Code 拡張の一覧 | — |
-| `windows/tweaks/` | Windows のチューニング（サービス・レジストリ・タスク・スタートアップ・見た目）。`apply.ps1` / `revert.ps1`（install.ps1 からは呼ばない） | — |
+| `windows/tweaks/` | Windows のチューニング（サービス・レジストリ・タスク・スタートアップ・アプリ・見た目）。`apply.ps1` / `revert.ps1`（install.ps1 からは呼ばない） | — |
 | `notes/` | 調査メモ・資料（Windows のチューニング記録など） | — |
 
 ## 新しい PC で

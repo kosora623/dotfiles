@@ -10,6 +10,9 @@ $TweakStateFile = Join-Path $HOME 'dotfiles-backup\windows-tweaks.json'   # appl
 #   Reg  <パス> <名前> <型> <設定する値> <Windows 11 の既定値>   既定値が $null = 値がない状態が既定
 #   Svc  <サービス名> <設定する開始の種類> <既定の開始の種類>     Automatic / AutomaticDelayed / Manual / Disabled
 #   Task <タスクのパス> <タスク名>                                無効にする（既定は有効）
+#   Appx  <パッケージ名> <戻し方>      ストアアプリを今のユーザーから消し、プロビジョニング（新しいユーザー用）からも消す
+#   Win32 <アンインストールのキー> <戻し方> [追加の引数]   UninstallString を実行して消す
+#   アプリは入っていなければ何もしない。revert.ps1 は入れ直さず、戻し方を表示するだけ
 # ---------------------------------------------------------------------------
 function Reg([string]$Path, [string]$Name, [string]$Type, $Value, $Default) {
   @{ kind = 'reg'; path = $Path; name = $Name; type = $Type; value = $Value; default = $Default }
@@ -20,6 +23,15 @@ function Svc([string]$Name, [string]$Value, [string]$Default) {
 function Task([string]$Path, [string]$Name) {
   @{ kind = 'task'; path = $Path; name = $Name }
 }
+function Appx([string]$Name, [string]$Restore) {
+  @{ kind = 'appx';     name = $Name; restore = $Restore }   # 今のユーザー
+  @{ kind = 'appxprov'; name = $Name; restore = $Restore }   # プロビジョニング（管理者）
+}
+function Win32([string]$Path, [string]$Restore, [string]$ExtraArgs = '') {
+  @{ kind = 'win32'; path = $Path; extra = $ExtraArgs; restore = $Restore }
+}
+function Store([string]$Id) { "winget install -s msstore $Id  / ストア: ms-windows-store://pdp/?ProductId=$Id" }
+function Test-TweakIsApp($i) { $i.kind -in 'appx', 'appxprov', 'win32', 'defaultrun' }
 
 function Get-TweakItems {
   $cv   = 'HKCU:\Software\Microsoft\Windows\CurrentVersion'
@@ -135,6 +147,28 @@ function Get-TweakItems {
       # 残す: Lenovo Power Manager / Adobe Acrobat Update Task / Office の更新・保守のタスク
     )
 
+    # すぐ消える。アップデートで戻ってくることがあるので、気づいたら apply.ps1 をもう一度実行する
+    # プロビジョニングから消すと Deprovisioned に記録され、大型アップデートでも入りにくくなる
+    'アプリ' = @(
+      Appx MicrosoftWindows.Client.WebExperience (Store 9MSSGKG348SP)   # ウィジェット（ポリシーでも無効にしている）
+      Appx Microsoft.BingNews  (Store 9WZDNCRFHVFW)
+      Appx Microsoft.BingWeather (Store 9WZDNCRFJ3Q2)
+      Appx Clipchamp.Clipchamp (Store 9P1J8S7CCWWT)
+      Appx Microsoft.MicrosoftSolitaireCollection 'ストア: ms-windows-store://pdp/?ProductId=9WZDNCRFHWD2（winget の msstore では見つからない）'
+      Appx Microsoft.GamingApp  (Store 9MV0B5HZVK9Z)   # Xbox アプリ。Game Bar（XboxGamingOverlay）は残す
+      Appx Microsoft.Xbox.TCUI  (Store 9NKNC0LD5NN6)
+      Appx Microsoft.YourPhone  (Store 9NMPJ99VJBWV)   # スマートフォン連携。CrossDevice は残す
+      Appx MicrosoftCorporationII.MicrosoftFamily (Store 9PDJDJS743XF)
+      # Copilot（Microsoft Copilot。GitHub Copilot とは関係ない）。ストア版と、Edge ベースの Win32 版がある
+      Appx Microsoft.Copilot (Store 9NHT9RB2F4HD)
+      Win32 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Copilot' (Store 9NHT9RB2F4HD) '--force-uninstall'
+      # OneDrive。ユーザーごとの版と全ユーザー版があり、新しいユーザーには既定ユーザーの Run（OneDriveSetup）から入る
+      Win32 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\OneDriveSetup.exe' 'winget install Microsoft.OneDrive'
+      Win32 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OneDriveSetup.exe' 'winget install Microsoft.OneDrive'
+      @{ kind = 'defaultrun'; name = 'OneDriveSetup'
+         restore = '既定ユーザー（C:\Users\Default\NTUSER.DAT）の Run に OneDriveSetup = "%SystemRoot%\System32\OneDriveSetup.exe /thfirstsetup" を書く' }
+    )
+
     # explorer の再起動で効く
     '見た目' = @(
       # 旧式の右クリックメニュー
@@ -206,6 +240,8 @@ function Get-TweakId($i) {
     'reg'     { "reg|$($i.path)|$($i.name)" }
     'service' { "service|$($i.name)" }
     'task'    { "task|$($i.path)$($i.name)" }
+    'win32'   { "win32|$($i.path)" }
+    { $_ -in 'appx', 'appxprov', 'defaultrun' } { "$($i.kind)|$($i.name)" }
     default   { $i.kind }
   }
 }
@@ -221,6 +257,9 @@ function ConvertTo-TweakState($i, [switch]$Default) {
     'task'        { @{ enabled = [bool]$Default } }
     'classicmenu' { @{ exists = -not $Default } }
     'autohide'    { @{ on = -not $Default } }
+    # アプリの既定は「入っている」。revert.ps1 はアプリを ops に入れないので、既定の状態は使わない
+    { $_ -in 'appx', 'appxprov', 'win32' } { @{ installed = [bool]$Default } }
+    'defaultrun'  { @{ exists = [bool]$Default } }
   }
 }
 
@@ -235,13 +274,17 @@ function New-TweakOp($i, $state, [string]$source = '') {
     'task'        { "タスク $($i.path)$($i.name)" }
     'classicmenu' { '旧式の右クリックメニュー' }
     'autohide'    { 'タスクバーを自動的に隠す' }
+    'appx'        { "アプリ $($i.name)" }
+    'appxprov'    { "プロビジョニング $($i.name)" }
+    'win32'       { "アプリ $(Split-Path $i.path -Leaf)（$($i.path.Substring(0, 4))）" }
+    'defaultrun'  { "既定ユーザーの Run\$($i.name)" }
   }
   $op = $i.Clone()
   $op.id = Get-TweakId $i; $op.label = $label; $op.state = $state; $op.source = $source
   $op
 }
 
-function Test-TweakNeedsAdmin($op) { $op.kind -in 'service', 'task' -or "$($op.path)" -like 'HKLM:*' }
+function Test-TweakNeedsAdmin($op) { $op.kind -in 'service', 'task', 'appxprov', 'defaultrun' -or "$($op.path)" -like 'HKLM:*' }
 
 # ---------------------------------------------------------------------------
 # 実際に読み書きする部分。ops（JSON ファイル）の各項目を state にして、変更前の状態を返す。
@@ -252,6 +295,42 @@ $TweakEngine = {
   $ErrorActionPreference = 'Stop'
   $ops = @(Get-Content -Raw -LiteralPath $OpsFile | ConvertFrom-Json -AsHashtable)
   $res = @{ log = @{}; before = @{}; changed = @(); failed = @() }
+  $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+  $provKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\Applications'   # 管理者でなくても読める
+
+  # プロビジョニングされたパッケージの完全名（例: Microsoft.BingNews_2024.401.617.0_neutral_~_8wekyb3d8bbwe）
+  function Get-Provisioned($name) {
+    @(Get-ChildItem -LiteralPath $provKey | ForEach-Object PSChildName | Where-Object { $_ -like "${name}_*" })
+  }
+
+  # 既定ユーザーのハイブを読み込んで Run キーを渡す（reg load は管理者が必要）
+  function Use-DefaultRun([scriptblock]$Body, [switch]$Writable) {
+    $dir  = [Environment]::ExpandEnvironmentVariables((Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList').Default)
+    $hive = 'DotfilesTweakDefault'
+    reg.exe load "HKU\$hive" (Join-Path $dir 'NTUSER.DAT') 2>&1 | Out-Null
+    if ($LASTEXITCODE) { throw '既定ユーザーのハイブを読み込めない' }
+    $k = $null
+    try {
+      $k = [Microsoft.Win32.Registry]::Users.OpenSubKey("$hive\Software\Microsoft\Windows\CurrentVersion\Run", [bool]$Writable)
+      & $Body $k
+    } finally {
+      if ($k) { $k.Dispose() }
+      [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+      reg.exe unload "HKU\$hive" 2>&1 | Out-Null
+    }
+  }
+
+  function Invoke-Uninstall($op) {
+    $p = Get-ItemProperty -LiteralPath $op.path
+    $cmd = if ($p.QuietUninstallString) { $p.QuietUninstallString } else { $p.UninstallString }
+    if ($cmd -match '^\s*"([^"]+)"\s*(.*)$' -or $cmd -match '^\s*(\S+?\.exe)\s*(.*)$') {
+      $exe = $Matches[1]; $argList = "$($Matches[2]) $($op.extra)".Trim()
+    } else { throw "UninstallString を解釈できない: $cmd" }
+    $sp = @{ FilePath = $exe; Wait = $true; PassThru = $true }
+    if ($argList) { $sp.ArgumentList = $argList }
+    $proc = Start-Process @sp
+    if (Test-Path -LiteralPath $op.path) { throw "アンインストーラーが終わったが残っている（終了コード $($proc.ExitCode)）" }
+  }
 
   if (@($ops | Where-Object { $_.kind -eq 'autohide' }).Count -and -not ('TweakAppBar' -as [type])) {
     Add-Type @'
@@ -292,6 +371,13 @@ public static class TweakAppBar {
       }
       'classicmenu' { return @{ exists = [bool](Test-Path -LiteralPath $op.path) } }
       'autohide'    { return @{ on = (([TweakAppBar]::GetState() -band 1) -ne 0) } }
+      'appx'        { return @{ installed = [bool](Get-AppxPackage -Name $op.name) } }
+      'appxprov'    { return @{ installed = (Get-Provisioned $op.name).Count -gt 0 } }
+      'win32'       { return @{ installed = [bool](Test-Path -LiteralPath $op.path) } }
+      'defaultrun'  {
+        if (-not $isAdmin) { return '管理者でないと調べられない' }   # -DryRun は昇格しないため
+        return Use-DefaultRun { param($k) @{ exists = [bool]($k -and $op.name -in $k.GetValueNames()) } }
+      }
     }
   }
 
@@ -332,6 +418,18 @@ public static class TweakAppBar {
         $cur = [TweakAppBar]::GetState()
         [TweakAppBar]::SetState($(if ($s.on) { $cur -bor 1 } else { $cur -band -bnot 1 }))
       }
+      # アプリは消すだけ。入れ直しはしない
+      { $_ -in 'appx', 'appxprov', 'win32', 'defaultrun' -and ($s.installed -or $s.exists) } { throw '入れ直しはしない' }
+      'appx' { Get-AppxPackage -Name $op.name | Remove-AppxPackage }
+      'appxprov' {
+        foreach ($full in Get-Provisioned $op.name) {
+          # Remove-AppxProvisionedPackage は pwsh 7 で「クラスが登録されていません」になるので dism.exe を使う
+          $o = dism.exe /English /Online /NoRestart /Remove-ProvisionedAppxPackage "/PackageName:$full" 2>&1
+          if ($LASTEXITCODE) { throw "dism が失敗（$LASTEXITCODE）: $(@($o)[-3..-1] -join ' ')" }
+        }
+      }
+      'win32' { Invoke-Uninstall $op }
+      'defaultrun' { Use-DefaultRun -Writable { param($k) if ($k) { $k.DeleteValue($op.name, $false) } } }
     }
   }
 
@@ -341,6 +439,7 @@ public static class TweakAppBar {
     if ($s.ContainsKey('start'))   { return $s.start }
     if ($s.ContainsKey('enabled')) { return $(if ($s.enabled) { '有効' } else { '無効' }) }
     if ($s.ContainsKey('on'))      { return $(if ($s.on) { 'オン' } else { 'オフ' }) }
+    if ($s.ContainsKey('installed')) { return $(if ($s.installed) { 'あり' } else { 'なし' }) }
     if (-not $s.exists) { return '(なし)' }
     if ($s.ContainsKey('value')) {
       if ($s.type -eq 'Binary') { return (@($s.value) | ForEach-Object { '{0:x2}' -f [int]$_ }) -join ' ' }
@@ -353,6 +452,7 @@ public static class TweakAppBar {
     try {
       $cur = Read-State $op
       if ($null -eq $cur) { $res.log[$op.id] = "skip   $($op.label)（見つからない）"; continue }
+      if ($cur -is [string]) { $res.log[$op.id] = "?      $($op.label)（$cur）"; continue }
       $res.before[$op.id] = $cur
       if ((Key $cur) -eq (Key $op.state)) { $res.log[$op.id] = "=      $($op.label) = $(Show $cur)"; continue }
       if (-not $DryRun) { Write-State $op $op.state }
@@ -404,7 +504,7 @@ function Show-TweakLog($ops, $result) {
     $line = $result.log[$op.id]
     if (-not $line) { continue }
     if ($op.source) { $line += "  [$($op.source)]" }
-    $color = if ($line -like '失敗*') { 'Red' } elseif ($line -like '=*' -or $line -like 'skip*') { 'DarkGray' } else { 'White' }
+    $color = if ($line -like '失敗*') { 'Red' } elseif ($line -like '`?*') { 'Yellow' } elseif ($line -like '=*' -or $line -like 'skip*') { 'DarkGray' } else { 'White' }
     Write-Host "  $line" -ForegroundColor $color
   }
 }
@@ -420,6 +520,19 @@ function Save-TweakState($state) {
   $sorted = [ordered]@{}
   foreach ($k in $state.Keys | Sort-Object) { $sorted[$k] = $state[$k] }
   ConvertTo-Json $sorted -Depth 6 | Set-Content -LiteralPath $TweakStateFile -Encoding utf8NoBOM
+}
+
+# revert.ps1 用。アプリは入れ直さず、戻し方だけ表示する（Appx は今のユーザーとプロビジョニングで 2 項目あるのでまとめる）
+function Show-AppRestoreHint($items) {
+  Write-Host "`n## アプリ（入れ直さない。必要なら手で入れる）" -ForegroundColor Cyan
+  $seen = @{}
+  foreach ($i in $items) {
+    $name = if ($i.kind -eq 'win32') { "$(Split-Path $i.path -Leaf)（$($i.path.Substring(0, 4))）" } else { $i.name }
+    if ($seen.ContainsKey($name)) { continue }
+    $seen[$name] = $true
+    Write-Host "  $name"
+    Write-Host "      $($i.restore)" -ForegroundColor DarkGray
+  }
 }
 
 function Show-TweakHint {

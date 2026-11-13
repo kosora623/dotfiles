@@ -1,5 +1,5 @@
 #Requires -Version 7
-# apply.ps1 - Windows のチューニング（サービス / レジストリ / タスク / スタートアップ / 見た目 / Lenovo）を適用する
+# apply.ps1 - Windows のチューニング（サービス / レジストリ / タスク / スタートアップ / アプリ / 見た目 / Lenovo）を適用する
 #   pwsh -File .\windows\tweaks\apply.ps1 -DryRun            # 何が変わるかだけ表示（何も変えない）
 #   pwsh -File .\windows\tweaks\apply.ps1                    # 適用
 #   pwsh -File .\windows\tweaks\apply.ps1 -RestartExplorer   # 適用して explorer を再起動
@@ -9,6 +9,7 @@
 # - 変える項目の変更前の値を ~\dotfiles-backup\windows-tweaks.json に記録する（revert.ps1 が使う）。
 #   記録は最初の 1 回だけ残し、2 回目以降に上書きしない。
 #   すでに目的の値になっている項目は記録しない（元の値がわからないので、revert.ps1 は Windows 11 の既定値に戻す）
+# - アプリは入っていれば消す。revert.ps1 は入れ直さないので記録もしない
 param(
   [switch]$DryRun,
   [switch]$RestartExplorer
@@ -24,8 +25,9 @@ if ($DryRun) { Write-Host "`n-DryRun なので何も変えていません。" -F
 
 $state = Read-TweakState
 $added = 0
+$appIds = @($ops | Where-Object { Test-TweakIsApp $_ } | ForEach-Object id)
 foreach ($id in $result.changed) {
-  if (-not $state.ContainsKey($id)) { $state[$id] = $result.before[$id]; $added++ }
+  if ($id -notin $appIds -and -not $state.ContainsKey($id)) { $state[$id] = $result.before[$id]; $added++ }
 }
 Save-TweakState $state
 Write-Host "`n変更: $(@($result.changed).Count) 件 / 失敗: $(@($result.failed).Count) 件"
