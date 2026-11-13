@@ -46,9 +46,14 @@ foreach ($l in Read-List 'packages\scoop.txt') {
 }
 
 # ---- 3. mise (+ shims on user PATH so GUI apps / Neovim see the tools)
+# Node goes through the 'lts' junction directly, ahead of the shims: a shim costs ~90 ms per call.
+# This gives up per-folder Node versions (no project pins one). The junction appears at step 6.
 $shims = Join-Path $env:LOCALAPPDATA 'mise\shims'
+$node  = Join-Path $env:LOCALAPPDATA 'mise\installs\node\lts'
 $u = [Environment]::GetEnvironmentVariable('Path','User')
-if (($u -split ';') -notcontains $shims) { [Environment]::SetEnvironmentVariable('Path', "$shims;$u", 'User') }
+$rest = @($u -split ';' | Where-Object { $_ -and $_ -ne $shims -and $_ -ne $node })
+$want = (@($node, $shims) + $rest) -join ';'
+if ($want -ne $u) { [Environment]::SetEnvironmentVariable('Path', $want, 'User') }
 Update-SessionPath
 
 # ---- 4. git identity (kept out of the repo)

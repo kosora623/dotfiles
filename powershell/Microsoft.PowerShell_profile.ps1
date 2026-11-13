@@ -106,7 +106,8 @@ if (-not (Test-Path (Join-Path $ShellCacheDir "starship.ps1"))) { Update-ShellCa
 # ====================================================
 # 8. mise は shims だけで使う（activate しない）
 #    %LOCALAPPDATA%\mise\shims が PATH に入っていれば（install.ps1 が設定する）
-#    node などはフォルダごとの mise.toml / .node-version に従って切り替わる。
+#    go / python はフォルダごとの mise.toml / .python-version に従って切り替わる。
+#    node は shims より前の installs\node\lts（ジャンクション）を直接使う（shims 1 回 約 90ms を避ける）。
 #    activate は起動のたびに mise hook-env を実行して約 120ms かかるので使わない
 # ====================================================
 
