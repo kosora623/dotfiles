@@ -94,6 +94,36 @@ Windows 10 風にした設定。2026-11-13 に読み取りだけで確認した�
 時計の秒なし、Copilot のボタン（アプリ自体がない）。
 `HKLM\...\Policies\Explorer` の `NoActiveDesktop=1` などは古い既定値で、変更の跡ではない。
 
+## 5. スタートアップ
+
+2026-11-13 に読み取りだけで洗い出した。場所は StartupApproved（HKCU / HKLM の Run・Run32・StartupFolder）、Run キー、
+スタートアップフォルダ、ストアアプリの StartupTask、ログオン時に起動するタスク。メモリは常駐しているもののプライベートメモリの実測。
+
+止め方: .lnk や Run の値は消さず、StartupApproved のバイナリ値の 1 バイト目を奇数（03）にする（設定画面でオフにしたのと同じ）。
+ストアアプリは `HKCU\Software\Classes\Local Settings\...\AppModel\SystemAppData\<パッケージ>\<タスク>\State` を 1（ユーザーがオフにした）にする。
+
+| 名前 | 場所 | 扱い | メモリ |
+|---|---|---|---|
+| Google Japanese Input Prelauncher | HKLM Run | 残す（CorvusSKK と併用） | 約 45MB |
+| GlazeWM.lnk | スタートアップフォルダ | 残す | 7MB（zebar +37MB） |
+| vim-move.ahk | スタートアップフォルダ（link.ps1 が置く） | 残す | 3MB |
+| imcrvmgr（CorvusSKK） | HKLM Run | 残す | 12MB |
+| SecurityHealth | HKLM Run | 残す | 2MB |
+| Power Automate Desktop | ストアアプリ | **止めた**（State 2 → 1） | 目安 100〜150MB |
+| Okta Verify Activation Task | タスク `\` | **止めた** | 105MB |
+| StartCN（AMD Software / RadeonSoftware） | タスク `\` | **止めた** | 約 300MB |
+| StartDVR（AMD の録画） | タスク `\` | **止めた** | 6MB |
+| Lenovo Power Manager Background monitor | タスク `\Lenovo\Power Manager\` | 残す | 6MB |
+| Adobe Acrobat Update Task / Office の更新・保守のタスク 6 個 | タスク | 残す（一時的に動くだけ） | — |
+
+すでにオフだったもの（新しい PC でも同じ状態にするため、tweaks.ps1 に入れた）:
+Edge・Chrome の自動起動、OneDrive、Mattermost、UA Connect、Acrobat Synchronizer、Baidu ×2、AMDNoiseSuppression、Docker Desktop、
+Notion、Figma Agent、PopyachsaAirPlay、Ollama.lnk、GlobalProtect、MuseHub、Adobe CCXProcess / Creative Cloud、MDMService、Tailscale.lnk、
+ストアアプリの Slack・Teams・iTunes ×2・Office Hub・To Do・Windows Terminal・CrossDevice。
+Edge・Chrome の値の名前の末尾はプロファイルのパスから作られるので、別の PC では一致せず効かない（そのときは名前を直す）。
+
+Windows 標準のログオンタスク（MsCtfMonitor・SystemSoundsService など）は IME などに必要か一時的に動くだけなので対象外。
+
 ## 見直し
 
 2026-11-13 に元に戻した:
@@ -108,14 +138,23 @@ Windows 10 風にした設定。2026-11-13 に読み取りだけで確認した�
 
 - ToastEnabled=0: メモリには関係ない。通知がいらないなら残してよい
 - HiberbootEnabled=0: 起動は少し遅くなる。意図的ならそのまま
-- スタートアップのアプリはほとんど StartupApproved でオフになっている。オンで残っているのは Microsoft.Lists、Logitech Download Assistant、
-  Google Japanese Input Prelauncher。Google 日本語入力は CorvusSKK と併用していて必要なので残す
+- ~~スタートアップのアプリ~~ → 2026-11-13 に「5. スタートアップ」で整理し、tweaks.ps1 の「スタートアップ」セクションに入れた
+- Microsoft.Lists・Logitech Download Assistant・StartupApproved\Run の GlazeWM は 02（オン）のまま残っているが、Run に値がない空のエントリで何も起動しない。
+  REFLECTOR4 も Run の値が空。どれも害がないので触らない（アンインストールの残り。気になるなら設定画面から消える日を待つか、手で消す）
+- Okta のログオンタスクを止めたので、Okta Verify を使うときは手で起動する。
+  更新で Okta や AMD Software を入れ直すと、タスクが有効に戻ることがある（apply.ps1 をもう一度流せば戻る）
+- tailscaled（約 130MB）・PanGPA はサービスから起動するので、スタートアップをオフにしても常駐する。減らすならサービス側の検討になる
+- RadeonSoftware は StartCN を止めても、AMD Software を手で開けば起動する。ドライバーの更新通知は来なくなる
 
 ## 再現と巻き戻し
 
 この棚卸しの内容（戻したものを除く）と追加の設定は `windows/tweaks/apply.ps1` で再現でき、`revert.ps1` で戻せる。
 追加の設定は LongPathsEnabled・開発者モード・KeyboardDelay=0・固定キー / 切り替えキー / フィルターキーのショートカット停止・
 MenuShowDelay=100・タスクバーの「タスクの終了」。
+
+スタートアップの注意: apply.ps1 は「すでに目的の値になっている項目」を記録しないので、もともとオフだった項目は revert.ps1 で
+既定（エントリなし = オン）に戻り、次のサインインから起動するようになる。オンに戻したくないときは revert.ps1 を使わず、設定画面で個別に戻す。
+また、apply.ps1 は StartupApproved のオフにした日時を 0 で上書きする（オフのままで動作は変わらない。元の日時は記録に残る）。
 
 ## 再調査のしかた
 

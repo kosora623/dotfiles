@@ -28,6 +28,10 @@ function Get-TweakItems {
   $desk = 'HKCU:\Control Panel\Desktop'
   $acc  = 'HKCU:\Control Panel\Accessibility'
   $mtask = '\Microsoft\Windows\'
+  $sa    = "$cv\Explorer\StartupApproved"
+  $saLM  = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved'
+  $appx  = 'HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData'
+  $off   = @(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)   # StartupApproved のオフ
 
   $sections = [ordered]@{
     # 開始の種類の変更は再起動後に効く
@@ -85,6 +89,50 @@ function Get-TweakItems {
       Task "${mtask}Customer Experience Improvement Program\" UsbCeip
       Task "${mtask}DiskDiagnostic\" Microsoft-Windows-DiskDiagnosticDataCollector   # ディスク故障の兆候を通知しなくなる
       Task "${mtask}Flighting\FeatureConfig\" BootstrapUsageDataReporting
+    )
+
+    # 次のサインインから効く。.lnk や Run の値は消さず、設定 > アプリ > スタートアップ でオフにしたのと同じ値を書く
+    # （StartupApproved の 1 バイト目が奇数 = オフ。残りの 8 バイトはオフにした日時で、0 でもよい）。
+    # 既定値 $null = エントリなし = アプリが登録したとおり起動する。入っていないアプリはエントリが増えるだけで害はない
+    'スタートアップ' = @(
+      Reg "$sa\Run" MicrosoftEdgeAutoLaunch_24F7774D1939FC64CCA9A22CDDDF4CBE  Binary $off $null   # 末尾はプロファイルのパスから作られるので PC ごとに違う
+      Reg "$sa\Run" GoogleChromeAutoLaunch_6BE559777F1DBD28B0E3228BF4F38FF6   Binary $off $null   # 同上
+      Reg "$sa\Run" OneDrive                     Binary $off $null
+      Reg "$sa\Run" Mattermost                   Binary $off $null
+      Reg "$sa\Run" 'UA Connect'                 Binary $off $null
+      Reg "$sa\Run" 'Adobe Acrobat Synchronizer' Binary $off $null
+      Reg "$sa\Run" BaiduYunGuanjia              Binary $off $null
+      Reg "$sa\Run" BaiduYunDetect               Binary $off $null
+      Reg "$sa\Run" AMDNoiseSuppression          Binary $off $null
+      Reg "$sa\Run" 'Docker Desktop'             Binary $off $null   # 起動すると WSL の VM で 1〜2GB
+      Reg "$sa\Run" electron.app.Notion          Binary $off $null
+      Reg "$sa\Run" 'Figma Agent'                Binary $off $null
+      Reg "$sa\Run" PopyachsaAirPlay             Binary $off $null
+      Reg "$sa\StartupFolder" Ollama.lnk         Binary $off $null
+      Reg "$saLM\Run"   GlobalProtect            Binary $off $null   # PanGPA はサービス（PanGPS）からも起動する
+      Reg "$saLM\Run"   MuseHub                  Binary $off $null
+      Reg "$saLM\Run32" 'Adobe CCXProcess'       Binary $off $null
+      Reg "$saLM\Run32" 'Adobe Creative Cloud'   Binary $off $null
+      Reg "$saLM\Run32" MDMService               Binary $off $null
+      Reg "$saLM\StartupFolder" Tailscale.lnk    Binary $off $null   # トレイのアイコンだけ。tailscaled はサービスなので動く
+      # 残す: Google Japanese Input Prelauncher / GlazeWM.lnk / vim-move.ahk / imcrvmgr（CorvusSKK）/ SecurityHealth
+
+      # ストアアプリ: State 1 = ユーザーがオフにした（アプリが自分でオンに戻せない）、2 = オン、0 = アプリの既定でオフ
+      Reg "$appx\Microsoft.PowerAutomateDesktop_8wekyb3d8bbwe\AutoStartTask"        State DWord 1 $null
+      Reg "$appx\com.tinyspeck.slackdesktop_8yrtsj140pw4g\SlackStartup"            State DWord 1 $null
+      Reg "$appx\MSTeams_8wekyb3d8bbwe\TeamsTfwStartupTask"                       State DWord 1 $null
+      Reg "$appx\AppleInc.iTunes_nzyj5cx40ttqa\AppleMobileDeviceProcess"           State DWord 1 $null
+      Reg "$appx\AppleInc.iTunes_nzyj5cx40ttqa\iTunesHelper"                       State DWord 1 $null
+      Reg "$appx\Microsoft.MicrosoftOfficeHub_8wekyb3d8bbwe\WebViewHostStartupId"  State DWord 1 $null
+      Reg "$appx\Microsoft.Todos_8wekyb3d8bbwe\ToDoStartupId"                      State DWord 1 $null
+      Reg "$appx\Microsoft.WindowsTerminal_8wekyb3d8bbwe\StartTerminalOnLoginTask" State DWord 1 $null
+      Reg "$appx\MicrosoftWindows.CrossDevice_cw5n1h2txyewy\CrossDevice.Start"     State DWord 1 $null
+
+      # ログオン時に起動するタスク（入っていない PC では skip）
+      Task '\' 'Okta Verify Activation Task'   # Okta Verify を常駐させない（約 105MB）。使うときは手で起動する
+      Task '\' StartCN    # AMD Software（RadeonSoftware 約 300MB）。ドライバーには関係ない
+      Task '\' StartDVR   # AMD の録画機能（AMDRSServ）
+      # 残す: Lenovo Power Manager / Adobe Acrobat Update Task / Office の更新・保守のタスク
     )
 
     # explorer の再起動で効く
@@ -178,7 +226,11 @@ function ConvertTo-TweakState($i, [switch]$Default) {
 
 function New-TweakOp($i, $state, [string]$source = '') {
   $label = switch ($i.kind) {
-    'reg'         { "$(Split-Path $i.path -Leaf)\$($i.name)" }
+    'reg' {
+      if ($i.path -match '\\StartupApproved\\(\w+)$') { "スタートアップ $($i.path.Substring(0, 4))\$($Matches[1])\$($i.name)" }
+      elseif ($i.path -match '\\SystemAppData\\([^\\_]+)_[^\\]+\\([^\\]+)$') { "ストアアプリ $($Matches[1])\$($Matches[2])" }
+      else { "$(Split-Path $i.path -Leaf)\$($i.name)" }
+    }
     'service'     { "サービス $($i.name)" }
     'task'        { "タスク $($i.path)$($i.name)" }
     'classicmenu' { '旧式の右クリックメニュー' }
@@ -373,4 +425,5 @@ function Save-TweakState($state) {
 function Show-TweakHint {
   Write-Host "`nサービスと HiberbootEnabled は再起動後、キーボードと視覚効果はサインアウト後、" -ForegroundColor Yellow
   Write-Host "タスクバー・エクスプローラー・右クリックメニューは explorer の再起動後に効きます（-RestartExplorer）。" -ForegroundColor Yellow
+  Write-Host "スタートアップは次のサインインから効きます（今動いているアプリは止めません）。" -ForegroundColor Yellow
 }

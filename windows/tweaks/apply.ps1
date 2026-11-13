@@ -1,5 +1,5 @@
 #Requires -Version 7
-# apply.ps1 - Windows のチューニング（サービス / レジストリ / タスク / 見た目 / Lenovo）を適用する
+# apply.ps1 - Windows のチューニング（サービス / レジストリ / タスク / スタートアップ / 見た目 / Lenovo）を適用する
 #   pwsh -File .\windows\tweaks\apply.ps1 -DryRun            # 何が変わるかだけ表示（何も変えない）
 #   pwsh -File .\windows\tweaks\apply.ps1                    # 適用
 #   pwsh -File .\windows\tweaks\apply.ps1 -RestartExplorer   # 適用して explorer を再起動
