@@ -129,7 +129,7 @@ function Get-TweakItem {
       Reg "$saLM\Run32" 'Adobe Creative Cloud'   Binary $off $null
       Reg "$saLM\Run32" MDMService               Binary $off $null
       Reg "$saLM\StartupFolder" Tailscale.lnk    Binary $off $null   # トレイのアイコン（tailscale-ipn.exe）。サービスは「サービス」セクションで手動にする
-      # 残す: Google Japanese Input Prelauncher / GlazeWM.lnk / vim-move.ahk / imcrvmgr（CorvusSKK）/ SecurityHealth
+      # 残す: GlazeWM.lnk / vim-move.ahk / imcrvmgr（CorvusSKK）/ SecurityHealth
 
       # ストアアプリ: State 1 = ユーザーがオフにした（アプリが自分でオンに戻せない）、2 = オン、0 = アプリの既定でオフ
       Reg "$appx\Microsoft.PowerAutomateDesktop_8wekyb3d8bbwe\AutoStartTask"        State DWord 1 $null

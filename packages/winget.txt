@@ -27,7 +27,6 @@ JohnMacFarlane.Pandoc
 glzr-io.glazewm
 AutoHotkey.AutoHotkey
 nathancorvussolis.corvusskk
-Google.JapaneseIME
 
 # --- Editors
 Neovim.Neovim
