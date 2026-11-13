@@ -104,6 +104,7 @@ jobs:
           try { $out = & "./windows/tweaks/${{ matrix.script }}" -DryRun *>&1 | Out-String -Stream; $code = $LASTEXITCODE }
           catch { $out = @("$_", $_.ScriptStackTrace); $code = 1 }
           $out
+          # TODO(#1): warnings for now. After 3 clean runs in a row, make these ::error:: and fail the job
           foreach ($l in $out | Where-Object { $_ -match '^\s*(失敗|\?)\s' }) {
             "::warning file=windows/tweaks/${{ matrix.script }},title=-DryRun item::$($l.Trim())"
           }
