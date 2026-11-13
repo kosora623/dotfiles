@@ -1,0 +1,111 @@
+# PowerShell scripts: syntax, encoding, PSScriptAnalyzer, and windows/tweaks -DryRun
+name: powershell
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  lint:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Syntax
+        run: |
+          $bad = 0
+          foreach ($f in git ls-files '*.ps1' '*.psm1' '*.psd1') {
+            $errs = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$errs) | Out-Null
+            foreach ($e in $errs) {
+              "::error file=$f,line=$($e.Extent.StartLineNumber),col=$($e.Extent.StartColumnNumber)::$($e.Message)"
+              $bad++
+            }
+          }
+          if ($bad) { exit 1 }
+          'no syntax errors'
+
+      # Windows PowerShell 5.1 misreads UTF-8 without BOM, so a script with non-ASCII text must be pwsh 7 only:
+      # either it says "#Requires -Version 7", or it is listed here as never run directly
+      - name: Encoding (non-ASCII => pwsh 7 only)
+        env:
+          PWSH7_ONLY: |
+            powershell/Microsoft.PowerShell_profile.ps1
+            windows/tweaks/tweaks.ps1
+        run: |
+          $allowed = $env:PWSH7_ONLY -split "`n" | ForEach-Object Trim | Where-Object { $_ }
+          $files = @(git ls-files '*.ps1' '*.psm1')
+          $bad = 0
+          foreach ($a in $allowed) {
+            if ($a -notin $files) { "::error::PWSH7_ONLY lists $a, which is not in the repo"; $bad++ }
+          }
+          foreach ($f in $files) {
+            $bytes = [IO.File]::ReadAllBytes((Resolve-Path $f))
+            if (-not ($bytes | Where-Object { $_ -gt 127 } | Select-Object -First 1)) { continue }
+            if ($f -in $allowed) { continue }
+            if (Select-String -Path $f -Pattern '^#Requires\s+-Version\s+7' -Quiet) { continue }
+            "::error file=$f::non-ASCII text, but not marked pwsh 7 only (add '#Requires -Version 7', or keep it ASCII for Windows PowerShell 5.1)"
+            $bad++
+          }
+          if ($bad) { exit 1 }
+          'encoding ok'
+
+      - name: PSScriptAnalyzer
+        run: |
+          $v = '1.25.0'
+          if (-not (Get-Module -ListAvailable PSScriptAnalyzer | Where-Object Version -eq $v)) {
+            Install-PSResource PSScriptAnalyzer -Version $v -Scope CurrentUser -TrustRepository -Quiet
+          }
+          Import-Module PSScriptAnalyzer -RequiredVersion $v
+          $r = @(Invoke-ScriptAnalyzer -Path . -Recurse -Settings ./PSScriptAnalyzerSettings.psd1 -Severity Error, Warning)
+          foreach ($d in $r) {
+            $file = (Resolve-Path -Relative $d.ScriptPath) -replace '^\.[\\/]', '' -replace '\\', '/'
+            $level = if ($d.Severity -eq 'Error') { 'error' } else { 'warning' }
+            "::$level file=$file,line=$($d.Line),col=$($d.Column),title=$($d.RuleName)::$($d.Message -replace '\r?\n', ' ')"
+          }
+          "suppressed (SuppressMessageAttribute):"
+          Invoke-ScriptAnalyzer -Path . -Recurse -Settings ./PSScriptAnalyzerSettings.psd1 -SuppressedOnly |
+            ForEach-Object { "  $($_.ScriptName):$($_.Line) $($_.RuleName)" }
+          if ($r.Count) { "$($r.Count) finding(s)"; exit 1 }
+          'no findings'
+
+  # Read-only run of the tweaks on a clean runner. -DryRun never elevates (no gsudo) and never writes.
+  # The runner is not a Lenovo, so that section is skipped.
+  # A script-level error fails the job; a per-item failure (the runner is Windows Server, not this PC)
+  # is shown as a warning only.
+  tweaks-dryrun:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        script: [apply.ps1, revert.ps1]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: ${{ matrix.script }} -DryRun
+        run: |
+          [Console]::OutputEncoding = [Text.Encoding]::UTF8   # the messages are Japanese
+          # run in this process (not a child pwsh) so the output is not re-encoded through the console code page
+          $global:LASTEXITCODE = 0
+          try { $out = & "./windows/tweaks/${{ matrix.script }}" -DryRun *>&1 | Out-String -Stream; $code = $LASTEXITCODE }
+          catch { $out = @("$_", $_.ScriptStackTrace); $code = 1 }
+          $out
+          foreach ($l in $out | Where-Object { $_ -match '^\s*(失敗|\?)\s' }) {
+            "::warning file=windows/tweaks/${{ matrix.script }},title=-DryRun item::$($l.Trim())"
+          }
+          if ($code) { "::error file=windows/tweaks/${{ matrix.script }}::exited with $code"; exit $code }
+          if (-not ($out -match 'DryRun')) { '::error::did not reach the end of the dry run'; exit 1 }
