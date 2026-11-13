@@ -18,6 +18,10 @@ function BackupPath([string]$path) {
   Join-Path $backupRoot $rel
 }
 
+function SameText([string]$a, [string]$b) {
+  ((Get-Content -Raw -LiteralPath $a) -replace "`r`n", "`n") -ceq ((Get-Content -Raw -LiteralPath $b) -replace "`r`n", "`n")
+}
+
 # mode: link = symbolic link, copy = plain copy (apps that replace the file when they save)
 $map = @(
   @{ src = 'powershell\Microsoft.PowerShell_profile.ps1'; dst = "$docs\PowerShell\Microsoft.PowerShell_profile.ps1"; mode = 'link' }
@@ -69,6 +73,10 @@ foreach ($m in $map) {
   $item = Get-Item $dst -Force -ErrorAction SilentlyContinue
   if ($item) {
     if ($item.LinkType -and $item.Target -eq $src) { Write-Host "ok    $dst"; continue }
+    # copy mode: same content -> nothing to do (don't pile up identical backups).
+    # compare ignoring CRLF/LF: git and the apps don't agree on line endings
+    if ($m.mode -eq 'copy' -and -not $item.LinkType -and -not $item.PSIsContainer -and
+        (SameText $src $dst)) { Write-Host "ok    $dst"; continue }
     if ($item.LinkType) { Remove-Item $dst -Force }
     else {
       $bak = BackupPath $dst
