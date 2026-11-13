@@ -56,6 +56,8 @@ function cdd {
 # ====================================================
 # 6. zoxide の遅延ロード（初回実行時のみ初期化）
 # ====================================================
+# 組み込みの cd エイリアス（Set-Location、AllScope）は関数より優先されるので、先に消さないと下の cd が呼ばれない
+Remove-Item Alias:cd -Force -ErrorAction SilentlyContinue
 function cd {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '',
         Justification = 'zoxide init の出力を読み込む公式の方法。初回の cd でだけ実行する')]
