@@ -124,7 +124,7 @@
     </list>
   </section>
   <section name="keymap">
-    <key name="kana" value="\cq" />
+    <key name="kana" value="@" />
     <key name="convchar" value="" />
     <key name="jlatin" value="L" />
     <key name="ascii" value="l" />
@@ -807,6 +807,7 @@
       <row ro="zyw" hi="じぇい" ka="ジェイ" an="ｼﾞｪｲ" so="0" />
       <row ro="zyz" hi="じゃん" ka="ジャン" an="ｼﾞｬﾝ" so="0" />
       <row ro="x:" hi=":" ka=":" an=":" so="0" />
+      <row ro="x@" hi="@" ka="@" an="@" so="0" />
       <row ro="xxwa" hi="ゎ" ka="ヮ" an="ﾜ" so="0" />
       <row ro="xxka" hi="ゕ" ka="ヵ" an="ｶ" so="0" />
       <row ro="xxke" hi="ゖ" ka="ヶ" an="ｹ" so="0" />
@@ -893,7 +894,6 @@
       <row ro="=" hi="=" ka="=" an="=" so="0" />
       <row ro=">" hi=">" ka=">" an=">" so="0" />
       <row ro="?" hi="？" ka="？" an="?" so="0" />
-      <row ro="@" hi="@" ka="@" an="@" so="0" />
       <row ro="[" hi="「" ka="「" an="｢" so="0" />
       <row ro="\" hi="\" ka="\" an="\" so="0" />
       <row ro="]" hi="」" ka="」" an="｣" so="0" />
