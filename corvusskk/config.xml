@@ -829,7 +829,7 @@
       <row ro="pp" hi="ぽう" ka="ポウ" an="ﾎﾟｳ" so="0" />
       <row ro="rr" hi="られ" ka="ラレ" an="ﾗﾚ" so="0" />
       <row ro="ss" hi="せい" ka="セイ" an="ｾｲ" so="0" />
-      <row ro="tt" hi="たち" ka="タチ" an="ﾀﾁ" so="0" />
+      <row ro="tt" hi="っ" ka="ッ" an="ｯ" so="1" />
       <row ro="vv" hi="っ" ka="ッ" an="ｯ" so="1" />
       <row ro="ww" hi="っ" ka="ッ" an="ｯ" so="1" />
       <row ro="yy" hi="っ" ka="ッ" an="ｯ" so="1" />
