@@ -36,6 +36,7 @@ $map = @(
   @{ src = 'yazi';                       dst = "$env:APPDATA\yazi\config";               mode = 'link' }
   @{ src = 'glazewm\config.yaml';        dst = "$HOME\.glzr\glazewm\config.yaml";        mode = 'link' }
   @{ src = 'zebar\settings.json';        dst = "$HOME\.glzr\zebar\settings.json";        mode = 'link' }
+  @{ src = 'zebar\kosora';              dst = "$HOME\.glzr\zebar\kosora";               mode = 'link' }
   @{ src = 'vscode\settings.json';       dst = "$env:APPDATA\Code\User\settings.json";   mode = 'link' }
   @{ src = 'home\.gitconfig';            dst = "$HOME\.gitconfig";                       mode = 'link' }
   @{ src = 'home\.latexmkrc';            dst = "$HOME\.latexmkrc";                       mode = 'link' }
