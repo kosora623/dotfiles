@@ -28,7 +28,7 @@ $keep    = 500
 # Start menu entries that are only uninstallers
 $skipApp = 'アンインストール|uninstall'
 
-function Write-Lines([string]$path, $lines) {
+function Write-ListFile([string]$path, $lines) {
   # write to a temp file first so a launcher opened meanwhile never reads half a file
   [IO.File]::WriteAllLines("$path.tmp", [string[]]@($lines), [Text.UTF8Encoding]::new($false))
   Move-Item -Force "$path.tmp" $path
@@ -40,7 +40,7 @@ function Update-Cache {
   $apps = (New-Object -ComObject Shell.Application).NameSpace('shell:AppsFolder').Items() |
     ForEach-Object { "{0}`t{1}" -f $_.Name.Trim(), $_.Path } |
     Sort-Object -Unique
-  Write-Lines $cache $apps
+  Write-ListFile $cache $apps
 
   # netsh prints in the console's OEM code page (932 on Japanese Windows), not UTF-8
   $saved = [Console]::OutputEncoding
@@ -57,7 +57,7 @@ function Update-Cache {
   } finally {
     [Console]::OutputEncoding = $saved
   }
-  Write-Lines $wifiTsv $wifi
+  Write-ListFile $wifiTsv $wifi
 }
 
 if ($Refresh) { Update-Cache; exit 0 }
