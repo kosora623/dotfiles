@@ -14,7 +14,7 @@ kosora の Windows 開発環境。PowerShell 7 + Windows Terminal + Neovim + Gla
 | `glazewm/` `zebar/` | タイル型 WM とステータスバー（自作パック `zebar/kosora/`：トレイ・Wi-Fi・Bluetooth・音量） | `~\.glzr\` |
 | `windows-terminal/` | Windows Terminal（コピーで配置） | `LocalState\settings.json` |
 | `vscode/` | VS Code 設定 | `%APPDATA%\Code\User\` |
-| `launcher/` | アプリランチャー（Alt+Space → fzf で起動。GlazeWM から呼ぶ） | （リポジトリから直接実行） |
+| `launcher/` | ランチャー（Alt+Space → fzf。アプリ起動と `C:\DEV` のプロジェクトを pwsh で開く。GlazeWM から呼ぶ） | （リポジトリから直接実行） |
 | `autohotkey/` | 無変換 + HJKL で矢印キー | スタートアップ |
 | `corvusskk/` | SKK 日本語入力（コピーで配置） | `%APPDATA%\CorvusSKK\` |
 | `home/` | .gitconfig / .latexmkrc / .bashrc など | `~\` |
