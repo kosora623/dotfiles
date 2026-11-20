@@ -37,6 +37,10 @@
         systray: { type: 'systray' },
       });
 
+      // 常駐アプリのうち、たたんでも常に表示するもの（ツールチップに含まれる文字列で指定）
+      // 例: ['Discord', 'Bluetooth']。アイコンにマウスを乗せると出る名前を書く
+      const PINNED_TRAY = [];
+
       // Windowsの設定画面・フライアウトを開く（zpack.jsonで許可したURIのみ）
       function openUri(uri) {
         zebar.shellExec('explorer', uri).catch(err => console.error(err));
@@ -46,6 +50,7 @@
 
       function App() {
         const [output, setOutput] = useState(providers.outputMap);
+        const [trayOpen, setTrayOpen] = useState(false);
 
         useEffect(() => {
           providers.onOutput(() => setOutput(providers.outputMap));
@@ -191,29 +196,46 @@
                 </>
               )}
 
-              {/* 常駐アプリ: 左クリック=開く / 右クリック=メニュー */}
-              {output.systray && (
-                <div className="systray">
-                  {output.systray.icons.map(icon => (
-                    <img
-                      key={icon.id}
-                      src={icon.iconUrl}
-                      title={icon.tooltip}
-                      onClick={e => {
-                        e.preventDefault();
-                        output.systray.onLeftClick(icon.id);
-                      }}
-                      onContextMenu={e => {
-                        e.preventDefault();
-                        output.systray.onRightClick(icon.id);
-                      }}
-                      onMouseEnter={() => output.systray.onHoverEnter(icon.id)}
-                      onMouseLeave={() => output.systray.onHoverLeave(icon.id)}
-                      onMouseMove={() => output.systray.onHoverMove(icon.id)}
-                    />
-                  ))}
-                </div>
-              )}
+              {/* 常駐アプリ: 左クリック=開く / 右クリック=メニュー。^ で展開/たたむ */}
+              {output.systray && (() => {
+                const isPinned = icon =>
+                  PINNED_TRAY.some(name => icon.tooltip?.includes(name));
+                const hiddenCount = output.systray.icons.filter(
+                  icon => !isPinned(icon),
+                ).length;
+                const visible = output.systray.icons.filter(
+                  icon => trayOpen || isPinned(icon),
+                );
+                return (
+                  <div className="systray">
+                    {hiddenCount > 0 && (
+                      <button
+                        className={`tray-toggle nf ${trayOpen ? 'nf-md-chevron_right' : 'nf-md-chevron_left'}`}
+                        title={trayOpen ? 'たたむ' : `他 ${hiddenCount} 個`}
+                        onClick={() => setTrayOpen(!trayOpen)}
+                      ></button>
+                    )}
+                    {visible.map(icon => (
+                      <img
+                        key={icon.id}
+                        src={icon.iconUrl}
+                        title={icon.tooltip}
+                        onClick={e => {
+                          e.preventDefault();
+                          output.systray.onLeftClick(icon.id);
+                        }}
+                        onContextMenu={e => {
+                          e.preventDefault();
+                          output.systray.onRightClick(icon.id);
+                        }}
+                        onMouseEnter={() => output.systray.onHoverEnter(icon.id)}
+                        onMouseLeave={() => output.systray.onHoverLeave(icon.id)}
+                        onMouseMove={() => output.systray.onHoverMove(icon.id)}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Wi-Fi: クリックでネットワーク一覧 */}
               {output.network && (
