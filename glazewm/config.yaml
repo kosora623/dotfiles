@@ -132,6 +132,11 @@ workspaces:
   - name: '9'
 
 window_rules:
+  # Float the app launcher in the middle of the screen.
+  - commands: ['set-floating --centered']
+    match:
+      - window_title: { equals: 'kosora-launcher' }
+
   - commands: ['ignore']
     match:
       # Ignores any Zebar windows.
@@ -222,8 +227,8 @@ keybindings:
   - commands: ['toggle-tiling-direction']
     bindings: ['alt+v']
 
-  # Change focus from tiling windows -> floating -> fullscreen.
-  - commands: ['wm-cycle-focus']
+  # App launcher (launcher/launcher.ps1): fzf in a floating Windows Terminal window.
+  - commands: ['shell-exec wt -w new --size 70,18 --title kosora-launcher --suppressApplicationTitle pwsh -NoProfile -File %USERPROFILE%\dotfiles\launcher\launcher.ps1']
     bindings: ['alt+space']
 
   # Change the focused window to be floating.
